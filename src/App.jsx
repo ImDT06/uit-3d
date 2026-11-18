@@ -57,7 +57,7 @@ export default function App() {
   return (
     <ModelErrorBoundary>
       <KeyboardControls map={keyboardMap}>
-        <Canvas shadows dpr={[1, 1.5]} gl={{ powerPreference: "high-performance", antialias: true }} camera={{ fov: 55, near: 0.1, far: 3000, position: [0, 30, 40] }}>
+        <Canvas shadows camera={{ fov: 55, near: 0.1, far: 3000, position: [0, 30, 40] }}>
           <color attach="background" args={["#bfe3ff"]} />
           <fog attach="fog" args={["#bfe3ff", 150, 650]} />
           <Sky sunPosition={[120, 80, 60]} />
@@ -66,11 +66,11 @@ export default function App() {
             position={[120, 160, 80]}
             intensity={2}
             castShadow
-            shadow-mapSize={[2048, 2048]}
-            shadow-camera-left={-180}
-            shadow-camera-right={180}
-            shadow-camera-top={180}
-            shadow-camera-bottom={-180}
+            shadow-mapSize={[4096, 4096]}
+            shadow-camera-left={-250}
+            shadow-camera-right={250}
+            shadow-camera-top={250}
+            shadow-camera-bottom={-250}
             shadow-camera-far={600}
             shadow-bias={-0.0005}
           />
