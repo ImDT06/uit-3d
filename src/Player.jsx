@@ -5,24 +5,9 @@ import { Ecctrl } from "ecctrl";
 import { EcctrlCameraControls } from "ecctrl/camera";
 import { useJoystickStore, useButtonStore } from "ecctrl/input";
 import { useGame } from "./store";
+import Student from "./Student";
 
 const ZONE_MARGIN = 8; // m: dung cach toa nha bao nhieu thi tinh la "o gan"
-
-// Nhan vat tam: vien nhong mau cam co "mui" de biet huong
-function Character() {
-  return (
-    <group>
-      <mesh castShadow position={[0, 0, 0]}>
-        <capsuleGeometry args={[0.3, 1.0, 8, 16]} />
-        <meshStandardMaterial color="#ff8a3d" />
-      </mesh>
-      <mesh castShadow position={[0, 0.35, 0.28]}>
-        <boxGeometry args={[0.3, 0.12, 0.12]} />
-        <meshStandardMaterial color="#222" />
-      </mesh>
-    </group>
-  );
-}
 
 export default function Player() {
   const spawn = useGame((s) => s.spawn);
@@ -33,12 +18,32 @@ export default function Player() {
   const [, getKeys] = useKeyboardControls();
   const lastZoneCheck = useRef(0);
 
-  // dat camera sau lung nhan vat luc bat dau
+  const camBlockers = useGame((s) => s.camBlockers);
+
+  // dat camera sau lung nhan vat, quay lung ve phia toa nha gan nhat de nhin ra khoang trong
   useEffect(() => {
-    if (spawn && cam.current) {
-      cam.current.setLookAt(spawn[0], spawn[1] + 6, spawn[2] + 12, spawn[0], spawn[1], spawn[2], false);
+    if (!spawn || !cam.current) return;
+    let dx = 0;
+    let dz = 1;
+    let best = Infinity;
+    for (const b of buildings) {
+      const cx = (b.box.min.x + b.box.max.x) / 2;
+      const cz = (b.box.min.z + b.box.max.z) / 2;
+      const d = Math.hypot(cx - spawn[0], cz - spawn[2]);
+      if (d < best && d > 0.01) {
+        best = d;
+        dx = (spawn[0] - cx) / d;
+        dz = (spawn[2] - cz) / d;
+      }
     }
-  }, [spawn]);
+    // camera dat giua nhan vat va toa nha, nhin ra phia trong trai
+    cam.current.setLookAt(spawn[0] - dx * 10, spawn[1] + 5, spawn[2] - dz * 10, spawn[0], spawn[1], spawn[2], false);
+  }, [spawn, buildings]);
+
+  // camera khong xuyen qua tuong
+  useEffect(() => {
+    if (cam.current) cam.current.colliderMeshes = camBlockers;
+  }, [camBlockers, spawn]);
 
   useFrame((state) => {
     const c = ecctrl.current;
@@ -99,7 +104,7 @@ export default function Player() {
         maxRunVel={9}
         jumpVel={5}
       >
-        <Character />
+        <Student controller={ecctrl} />
       </Ecctrl>
       <EcctrlCameraControls
         ref={cam}

@@ -4,9 +4,10 @@ import { create } from "zustand";
 export const useGame = create((set) => ({
   spawn: null,            // [x, y, z] diem xuat phat
   buildings: [],          // [{ name, box: THREE.Box3, center: [x,y,z] }]
+  camBlockers: [],        // mesh toa nha de camera khong xuyen qua
   currentZone: null,      // ten BLD_ dang dung gan
   visited: {},            // { BLD_A: true, ... }
-  setWorld: (spawn, buildings) => set({ spawn, buildings }),
+  setWorld: (spawn, buildings, camBlockers = []) => set({ spawn, buildings, camBlockers }),
   setZone: (name) =>
     set((s) =>
       s.currentZone === name

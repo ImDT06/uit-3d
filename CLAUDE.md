@@ -25,7 +25,9 @@ Website khám phá khuôn viên trường UIT (ĐH Công nghệ Thông tin, ĐHQ
 
 - `src/Campus.jsx`: tải `public/models/uit_campus.glb`, va chạm trimesh, nhãn tên tòa nhà,
   tìm điểm xuất phát không nằm trong tòa nhà.
-- `src/Player.jsx`: nhân vật, bàn phím + joystick, camera, phát hiện đang ở gần tòa nào.
+- `src/Player.jsx`: điều khiển (bàn phím + joystick), camera (không xuyên tường), phát hiện đang ở gần tòa nào.
+- `src/Student.jsx`: nhân vật sinh viên low-poly dựng bằng khối hình học, animation đi/chạy/nhảy
+  tính bằng code theo vận tốc của ecctrl (không cần file model).
 - `src/Hud.jsx`: giao diện (thẻ khu vực, tiến độ khám phá, hướng dẫn, màn hình tải, joystick mobile).
 - `src/zones.js`: tên, mô tả, ảnh từng khu vực. Key = tên object trong Blender.
 - `src/store.js`: trạng thái game.
@@ -36,10 +38,13 @@ Website khám phá khuôn viên trường UIT (ĐH Công nghệ Thông tin, ĐHQ
 - Dữ liệu từ OpenStreetMap. Quy ước tên object:
   - `BLD_*` tòa nhà: `BLD_A`, `BLD_B`, `BLD_C`, `BLD_D`, `BLD_E`, `BLD_CanTin`, `BLD_CanTin2`,
     `BLD_ChotBaoVe`, `BLD_X2` (chưa rõ)
+  - `DET_<tòa>_trim` / `DET_<tòa>_glass`: gờ sàn, lan can, cửa sổ (con của `BLD_*`, tạo bởi `uit_detail.py`)
+  - `TREE_*` cây (collection Deco). Trên web cây không dùng va chạm trimesh, mỗi cây một CylinderCollider.
   - `GND_*` mặt đất, sân, cỏ; `PATH_*` lối đi; `REF_*` ảnh tham chiếu (không xuất ra web)
   - Dự kiến: `COL_*` collider riêng, `ZONE_*` vùng kích hoạt nhiệm vụ
 - Chiều cao: số tầng x 3.5 m + 1 m. A, C: 3 tầng; D: 1; B: 9; E: 12 (B, E theo OSM, chưa xác nhận);
   căn tin 2; căn tin 2, chốt bảo vệ, X2: 1.
+- Chi tiết tòa nhà + trồng cây: script `uit_detail.py` (chạy lại được, tự xóa chi tiết cũ).
 - Xuất ra web bằng script `uit_export.py` trong Blender → `public/models/uit_campus.glb` (nén Draco).
   Trục: Blender Z-up → glTF Y-up; 1 đơn vị = 1 m; gốc tọa độ = tâm khuôn viên.
 
@@ -52,6 +57,5 @@ Website khám phá khuôn viên trường UIT (ĐH Công nghệ Thông tin, ĐHQ
 
 1. Hệ thống nhiệm vụ + một nhiệm vụ mẫu (nhặt vật phẩm rải quanh trường), danh sách nhiệm vụ trên HUD.
 2. Điền nội dung + ảnh cho từng khu vực trong `zones.js` (ảnh để ở `public/images/`).
-3. Nhân vật có animation (Quaternius, CC0) thay viên nhộng.
-4. Minigame theo khu vực (quiz thư viện, căn tin...), easter egg.
-5. Collider riêng nhẹ hơn trimesh, chi tiết mô hình (cửa sổ, mái, cây), bake ánh sáng.
+3. Minigame theo khu vực (quiz thư viện, căn tin...), easter egg.
+4. Chi tiết riêng cho từng tòa theo ảnh thật (cổng trường, sảnh, màu sắc), collider riêng nhẹ hơn, bake ánh sáng.
