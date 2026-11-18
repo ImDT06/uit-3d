@@ -1,19 +1,22 @@
-import { Component, Suspense } from "react";
+import { Component, Suspense, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { KeyboardControls, Sky } from "@react-three/drei";
+import { KeyboardControls, Sky, PerformanceMonitor } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import Campus, { MODEL_URL } from "./Campus";
 import Player from "./Player";
 import Hud, { Loading } from "./Hud";
+import Admin from "./Admin";
+import Waypoint from "./Waypoint";
+import { useGame } from "./store";
+import { useSettings, HOLD_ACTIONS } from "./settings";
+import { useHotkeys } from "./actions";
 
-const keyboardMap = [
-  { name: "forward", keys: ["ArrowUp", "KeyW"] },
-  { name: "backward", keys: ["ArrowDown", "KeyS"] },
-  { name: "leftward", keys: ["ArrowLeft", "KeyA"] },
-  { name: "rightward", keys: ["ArrowRight", "KeyD"] },
-  { name: "jump", keys: ["Space"] },
-  { name: "run", keys: ["Shift"] },
-];
+// Muc chat luong do hoa: do phan giai + bong do
+const QUALITY = {
+  low: { dpr: 0.75, shadows: false, mapSize: 1024 },
+  medium: { dpr: 1, shadows: true, mapSize: 2048 },
+  high: { dpr: Math.min(window.devicePixelRatio || 1, 2), shadows: true, mapSize: 4096 },
+};
 
 // Bat loi khi chua co file mo hinh
 class ModelErrorBoundary extends Component {
@@ -53,20 +56,44 @@ class ModelErrorBoundary extends Component {
 }
 
 export default function App() {
-  const debug = new URLSearchParams(window.location.search).has("debug");
+  const debug = useGame((s) => s.physicsDebug);
+  const paused = useGame((s) => s.menuOpen || s.mapOpen);
+  const binds = useSettings((s) => s.binds);
+  const quality = useSettings((s) => s.quality);
+  const [autoLevel, setAutoLevel] = useState("medium");
+  const q = QUALITY[quality === "auto" ? autoLevel : quality];
+  useHotkeys();
+
+  // bang phim giu (di, nhay, chay) lay tu cai dat, doi phim la cap nhat ngay
+  const keyboardMap = useMemo(() => HOLD_ACTIONS.map((name) => ({ name, keys: binds[name] || [] })), [binds]);
+
   return (
     <ModelErrorBoundary>
       <KeyboardControls map={keyboardMap}>
-        <Canvas shadows camera={{ fov: 55, near: 0.1, far: 3000, position: [0, 30, 40] }}>
+        <Canvas
+          shadows
+          dpr={q.dpr}
+          camera={{ fov: 55, near: 0.1, far: 3000, position: [0, 30, 40] }}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          {/* che do Tu dong: may chay muot thi tang, giat thi giam chat luong */}
+          {quality === "auto" && (
+            <PerformanceMonitor
+              onIncline={() => setAutoLevel((l) => (l === "low" ? "medium" : "high"))}
+              onDecline={() => setAutoLevel((l) => (l === "high" ? "medium" : "low"))}
+              flipflops={3}
+            />
+          )}
           <color attach="background" args={["#bfe3ff"]} />
           <fog attach="fog" args={["#bfe3ff", 150, 650]} />
           <Sky sunPosition={[120, 80, 60]} />
           <hemisphereLight args={["#ffffff", "#8a8f7a", 0.8]} />
           <directionalLight
+            key={q.mapSize}
             position={[120, 160, 80]}
             intensity={2}
-            castShadow
-            shadow-mapSize={[4096, 4096]}
+            castShadow={q.shadows}
+            shadow-mapSize={[q.mapSize, q.mapSize]}
             shadow-camera-left={-250}
             shadow-camera-right={250}
             shadow-camera-top={250}
@@ -75,13 +102,15 @@ export default function App() {
             shadow-bias={-0.0005}
           />
           <Suspense fallback={null}>
-            <Physics debug={debug}>
+            <Physics debug={debug} paused={paused}>
               <Campus />
               <Player />
             </Physics>
+            <Waypoint />
           </Suspense>
         </Canvas>
         <Hud />
+        <Admin />
         <Loading />
       </KeyboardControls>
     </ModelErrorBoundary>

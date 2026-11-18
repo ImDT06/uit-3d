@@ -41,10 +41,19 @@ Website khám phá khuôn viên trường UIT (ĐH Công nghệ Thông tin, ĐHQ
   - `DET_<tòa>_trim` / `DET_<tòa>_glass`: gờ sàn, lan can, cửa sổ (con của `BLD_*`, tạo bởi `uit_detail.py`)
   - `TREE_*` cây (collection Deco). Trên web cây không dùng va chạm trimesh, mỗi cây một CylinderCollider.
   - `GND_*` mặt đất, sân, cỏ; `PATH_*` lối đi; `REF_*` ảnh tham chiếu (không xuất ra web)
-  - Dự kiến: `COL_*` collider riêng, `ZONE_*` vùng kích hoạt nhiệm vụ
+  - `ZONE_<tòa>` (empty hình hộp, collection Gameplay): vùng khu vực, đứng trong hộp = đang ở `BLD_<tòa>`
+    (hoặc custom prop `zone`). `ITEM_###` (empty): điểm đặt vật phẩm, custom prop `quest`.
+    Tạo bằng script `uit_gameplay.py` (chạy lại được), có thể kéo/sửa tay. Web đọc trong `Campus.jsx` → `store.zones/items`.
+  - Mép `GND_Base` = biên khuôn viên, web dựng tường vô hình theo đó.
+  - Dự kiến: `COL_*` collider riêng
 - Chiều cao: số tầng x 3.5 m + 1 m. A, C: 3 tầng; D: 1; B: 9; E: 12 (B, E theo OSM, chưa xác nhận);
   căn tin 2; căn tin 2, chốt bảo vệ, X2: 1.
-- Chi tiết tòa nhà + trồng cây: script `uit_detail.py` (chạy lại được, tự xóa chi tiết cũ).
+- Chi tiết tòa nhà + trồng cây + cổng chính: script `uit_detail.py` (chạy lại được, tự xóa chi tiết cũ).
+  Kiểu riêng từng tòa trong bảng `STYLE` (A: tường trắng, mái cam, 2 vòm xanh ngọc; E: kính xanh liền,
+  bảng tên trên mái). Cổng chính (`GATE_*`, collection Props) chỉnh vị trí qua biến `GATE`.
+  Ảnh flycam (Kỷ yếu Sài Gòn) chỉ dùng làm mẫu dựng, không đưa lên web.
+- Va chạm trên web: tòa nhà là khối đặc (mỗi tam giác mặt đáy dựng thành lăng trụ, `ConvexHullCollider`),
+  không dùng trimesh vì tường mỏng làm nhân vật lọt vào trong. Mặt đất, lối đi, `GATE_*` vẫn dùng trimesh.
 - Xuất ra web bằng script `uit_export.py` trong Blender → `public/models/uit_campus.glb` (nén Draco).
   Trục: Blender Z-up → glTF Y-up; 1 đơn vị = 1 m; gốc tọa độ = tâm khuôn viên.
 

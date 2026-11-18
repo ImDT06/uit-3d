@@ -40,7 +40,7 @@ function Limb({ refObj, position, size, mat, end, endMat, endSize }) {
   );
 }
 
-export default function Student({ controller }) {
+export default function Student({ controller, hidden = false }) {
   const m = useMats();
   const root = useRef();
   const body = useRef();
@@ -82,10 +82,15 @@ export default function Student({ controller }) {
     const bob = moving ? Math.abs(Math.cos(phase.current)) * 0.05 * amp : Math.sin(t * 2) * 0.008;
     body.current.position.y = bob;
     body.current.rotation.x = THREE.MathUtils.damp(body.current.rotation.x, moving ? 0.08 * amp : 0, 8, d);
+
+    // nghieng nguoi vao trong khi re (theo toc do quay quanh truc dung)
+    const turn = c.currAngVel ? c.currAngVel.y : 0;
+    const lean = THREE.MathUtils.clamp(-turn * speed * 0.025, -0.3, 0.3);
+    root.current.rotation.z = THREE.MathUtils.damp(root.current.rotation.z, moving && !inAir ? lean : 0, 6, d);
   });
 
   return (
-    <group ref={root}>
+    <group ref={root} visible={!hidden}>
       <group ref={body}>
         {/* chan */}
         <Limb refObj={legL} position={[0.11, -0.16, 0]} size={[0.16, 0.74, 0.18]} mat={m.pants}
