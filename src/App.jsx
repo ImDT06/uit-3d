@@ -23,6 +23,20 @@ class ModelErrorBoundary extends Component {
   }
   render() {
     if (this.state.error) {
+      const msg = String(this.state.error?.message || this.state.error);
+      if (/webgl/i.test(msg)) {
+        return (
+          <div className="error">
+            <h2>Trình duyệt chưa bật đồ họa 3D</h2>
+            <p>
+              Trang này cần WebGL. Hãy bật <b>Use graphics acceleration when available</b> trong cài đặt trình
+              duyệt (Settings → System), khởi động lại trình duyệt rồi tải lại trang. Nếu vẫn lỗi, thử Chrome
+              hoặc Edge bản mới nhất.
+            </p>
+            <pre>{msg}</pre>
+          </div>
+        );
+      }
       return (
         <div className="error">
           <h2>Không tải được mô hình</h2>
@@ -30,7 +44,7 @@ class ModelErrorBoundary extends Component {
             Không tìm thấy <code>public{MODEL_URL}</code>. Hãy chạy script <code>uit_export.py</code> trong
             Blender để xuất file, rồi tải lại trang.
           </p>
-          <pre>{String(this.state.error?.message || this.state.error)}</pre>
+          <pre>{msg}</pre>
         </div>
       );
     }
