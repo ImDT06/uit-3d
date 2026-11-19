@@ -45,7 +45,8 @@ function Progress() {
   const done = Object.keys(visited).filter((k) => ZONES[k]).length;
   return (
     <div className="progress">
-      Đã khám phá <b>{done}</b>/{total} khu vực
+      <span className="progress-long">Đã khám phá </span>
+      <b>{done}</b>/{total} khu vực
     </div>
   );
 }
@@ -130,7 +131,12 @@ export default function Hud() {
     <>
       {!overlay && (
         <>
-          <Progress />
+          <div className="hud-top-left">
+            <button className="home-btn" {...noFocus} onClick={() => useGame.getState().setMode("intro")} title="Về trang chủ">
+              ← <span>Trang chủ</span>
+            </button>
+            <Progress />
+          </div>
           <Status />
           <Crosshair />
           <InteractPrompt />

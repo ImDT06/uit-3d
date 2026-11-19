@@ -80,7 +80,7 @@ function makeStops(buildings, bounds) {
 }
 
 // Vong sang nhap nho duoi chan toa dang tham quan
-function Ring({ x, z, r }) {
+function Ring({ x, z, r, visible }) {
   const ref = useRef();
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
@@ -90,7 +90,7 @@ function Ring({ x, z, r }) {
     ref.current.material.opacity = 0.55 + 0.25 * Math.sin(t * 3);
   });
   return (
-    <mesh ref={ref} position={[x, 0.35, z]} rotation-x={-Math.PI / 2}>
+    <mesh ref={ref} position={[x, 0.35, z]} rotation-x={-Math.PI / 2} visible={visible}>
       <ringGeometry args={[r, r + 1.4, 72]} />
       <meshBasicMaterial color="#ffd23f" transparent depthWrite={false} />
     </mesh>
@@ -123,6 +123,14 @@ export default function IntroScene() {
   const size = bounds.getSize(new THREE.Vector3());
 
   useEffect(() => setTourStops(stops), [stops, setTourStops]);
+
+  // bien dich san shader cua moi thu trong canh (ke ca bau troi, vong sang dang an) khi o trang chu,
+  // de luc bam vao tham quan khong bi dung hinh vi phai bien dich giua chung
+  const gl = useThree((s) => s.gl);
+  const scene3 = useThree((s) => s.scene);
+  useEffect(() => {
+    gl.compileAsync(scene3, camera).catch(() => {});
+  }, [gl, scene3, camera]);
 
   // nhin tu xa: tang near de mat dat va lop co (cach nhau 10 cm) khong nhap nhay; tra lai khi vao kham pha
   useEffect(() => {
@@ -218,7 +226,8 @@ export default function IntroScene() {
         <meshStandardMaterial color="#1d2b55" roughness={0.6} />
       </mesh>
 
-      {ring && <Ring {...ring} />}
+      {/* luon gan (chi an/hien) de shader duoc bien dich san o trang chu */}
+      <Ring x={ring?.x ?? 0} z={ring?.z ?? 0} r={ring?.r ?? 10} visible={!!ring} />
 
       {hoverB && (
         <Html position={hoverB.center} center zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>

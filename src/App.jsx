@@ -1,8 +1,10 @@
 import { Component, Suspense, lazy, useEffect, useMemo, useState } from "react";
+import { NeutralToneMapping } from "three";
 import { Canvas } from "@react-three/fiber";
-import { KeyboardControls, Sky, PerformanceMonitor } from "@react-three/drei";
+import { KeyboardControls, PerformanceMonitor } from "@react-three/drei";
 import { MODEL_URL } from "./world/campusModel";
 import Sun from "./world/Sun";
+import Atmosphere from "./world/Atmosphere";
 import Loading, { PreparingExplore } from "./ui/Loading";
 import FpsMeter, { fpsEnabled } from "./ui/FpsMeter";
 import IntroScene from "./world/IntroScene";
@@ -94,7 +96,8 @@ export default function App() {
           dpr={q.dpr}
           camera={{ fov: 55, near: 0.1, far: 3000, position: [0, 30, 40] }}
           onContextMenu={(e) => e.preventDefault()}
-          gl={{ alpha: true }}
+          // Neutral: giu mau vat lieu tuoi hon ACES (mac dinh cua R3F, lam mau xin, nga xam)
+          gl={{ alpha: true, toneMapping: NeutralToneMapping }}
           onCreated={(state) => {
             if (import.meta.env.DEV) window.__uitR3f = state; // cho script kiem thu doc renderer.info
           }}
@@ -108,10 +111,8 @@ export default function App() {
               flipflops={3}
             />
           )}
-          {/* trang chu: nen trong suot (nen CSS phia sau), khong suong mu de thay ca sa ban */}
-          {(mode !== "intro" || previewName) && <color attach="background" args={["#bfe3ff"]} />}
-          {mode !== "intro" && !previewName && <fog attach="fog" args={["#bfe3ff", 150, 650]} />}
-          {(mode !== "intro" || previewName) && <Sky sunPosition={[120, 80, 60]} />}
+          {/* trang chu: nen trong suot (nen CSS phia sau), khong suong mu; vao tham quan thi troi/suong mu hien dan */}
+          <Atmosphere on={mode !== "intro" || !!previewName} fog={!previewName} />
           <hemisphereLight args={["#ffffff", "#8a8f7a", 0.8]} />
           <Sun shadows={q.shadows} mapSize={q.mapSize} follow={explore} />
           <Suspense fallback={null}>

@@ -39,8 +39,11 @@ const isTyping = (t) =>
 // Lang nghe phim cho cac hanh dong bam mot lan
 export function useHotkeys() {
   useEffect(() => {
+    // tao AudioContext ton ~0,1 s: chi lam khi da vao kham pha (chi o do moi co tieng),
+    // tranh dung hinh luc bam chuyen tu trang chu sang tham quan
+    const unlock = () => useGame.getState().mode === "explore" && unlockAudio();
     const onKey = (e) => {
-      unlockAudio();
+      unlock();
       if (e.repeat || isTyping(e.target) || window.__rebinding) return;
       if (e.code === "Escape") {
         // dang khoa chuot thi trinh duyet tu nha chuot -> Player mo menu
@@ -59,10 +62,10 @@ export function useHotkeys() {
       if (binds.jump?.includes(e.code)) e.preventDefault(); // khong cuon trang / bam nut dang focus
     };
     window.addEventListener("keydown", onKey);
-    window.addEventListener("pointerdown", unlockAudio);
+    window.addEventListener("pointerdown", unlock);
     return () => {
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("pointerdown", unlock);
     };
   }, []);
 }

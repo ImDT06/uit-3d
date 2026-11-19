@@ -1,6 +1,7 @@
 /* Trang chu + che do tham quan + hieu ung vao kham pha */
 .scene { transition: background 0.8s ease; }
-.scene-intro {
+/* tham quan giu nen nay phia sau: troi xanh trong canvas hien dan de len (Atmosphere.jsx) */
+.scene-intro, .scene-tour {
   background:
     radial-gradient(1200px 700px at 72% 45%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 70%),
     linear-gradient(160deg, #dcefff 0%, #eaf3ff 45%, #fff3df 100%);
