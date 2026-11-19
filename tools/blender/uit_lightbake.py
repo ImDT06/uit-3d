@@ -23,6 +23,7 @@ from mathutils import Vector
 # (ten object, hoac tien to ket thuc bang "_" = moi object goc co ten bat dau nhu vay; px/m; ban kinh bo canh m)
 # Object con (DET_) dung ban kinh nho hon (chi tiet mong, bo canh lon bi meo).
 # Muc dau tien la "chuan do sang": do sang chung tinh theo no de moi phan khop mau nhau.
+# Cay (TREE_) va kinh (*_glass) khong nuong: van chieu sang thoi gian thuc.
 LIGHTBAKE = [
     ("BLD_B", 10, 0.15),
     ("PLAZA_B", 10, 0.05),
@@ -35,7 +36,7 @@ SAMPLES = 256
 SKIP_SUFFIX = ("_glass",)
 
 # Kieu anh sang. sun_dir: huong toi mat troi (Blender); phai khop src/world/lighting.js (three x,y,z = Blender x,z,-y)
-LIGHT = "trua"
+LIGHT = "sang"   # chu du an chon 19/11
 PRESETS = {
     "trua": dict(sun_dir=(120.0, -80.0, 160.0), sun_color=(1.0, 0.90, 0.76), sun_strength=4.0,
                  sky_color=(0.50, 0.66, 0.95), sky_strength=0.45, white=0.80),
@@ -59,8 +60,9 @@ def to_srgb(c):
     return np.where(c <= 0.0031308, c * 12.92, 1.055 * np.power(c, 1 / 2.4) - 0.055)
 
 
-def pow2(n):
-    return 2 ** int(math.ceil(math.log2(max(n, 1))))
+def round64(n):
+    """Lam tron len boi so 64 (WebGL2 dung duoc anh khong phai luy thua 2, khong phi cho nhu ep len 2^n)."""
+    return int(math.ceil(max(n, 1) / 64)) * 64
 
 
 def setup_device(scn):
@@ -226,16 +228,25 @@ def main():
     log(f"Anh sang: {LIGHT}")
     try:
         # danh sach (object, px/m, ban kinh bo canh)
-        objs = []
+        # chi object duoc xuat ra web (bo BLD_B_goc, REF_...); moi object chi lay 1 lan (BLD_B khop ca "BLD_")
+        export = set()
+        for cname in EXPORT_COLLECTIONS:
+            c = bpy.data.collections.get(cname)
+            if c:
+                export.update(o.name for o in c.all_objects)
+        objs, seen = [], set()
         for key, density, bevel in LIGHTBAKE:
             roots = ([o for o in scn.objects if o.name.startswith(key) and o.parent is None] if key.endswith("_")
                      else [o for o in [bpy.data.objects.get(key)] if o])
+            roots = [r for r in roots if r.name in export]
             if not roots:
                 log(f"Khong thay {key}")
             for r in roots:
                 for o in [r] + list(r.children_recursive):
-                    if o.type == "MESH" and not o.name.endswith(SKIP_SUFFIX):
+                    if o.type == "MESH" and not o.name.endswith(SKIP_SUFFIX) and o.name not in seen:
+                        seen.add(o.name)
                         objs.append((o, density, bevel if o is r else min(bevel, DETAIL_BEVEL)))
+        log(f"Nuong {len(objs)} object")
 
         # 1. nuong het tren vat lieu GOC (chua thay vat lieu nuong: tranh object nuong sau "thay" anh
         #    da nuong cua object truoc -> anh sang doi bi tinh 2 lan)
@@ -251,7 +262,7 @@ def main():
                 m.use_fake_user = True  # khong bi xoa khi luu file du khong con object nao dung
             save_store(text, data)
             area = sum(p.area for p in me.polygons)
-            size = min(MAX_SIZE, max(256, pow2(math.sqrt(area) * density / 0.7)))
+            size = min(MAX_SIZE, max(128, round64(math.sqrt(area) * density / 0.7)))
             lightmap_uv(o, size)
             iname = f"LMraw_{o.name}"
             old = bpy.data.images.get(iname)
