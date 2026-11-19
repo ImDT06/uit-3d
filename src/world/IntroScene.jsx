@@ -143,12 +143,16 @@ export default function IntroScene() {
       const aspect = window.innerWidth / window.innerHeight;
       const ov = overview(bounds, aspect < 1 ? Math.min(2.2, 1.15 / aspect) : 1);
       c.setLookAt(...ov.cam, ...ov.target, true);
+      // goc xoay ngang cong don sau nhieu vong (tu xoay, keo chuot): dua ve goc gan nhat de khong tua nguoc nhieu vong
+      c.normalizeRotations();
       // may tinh: mo hinh lech phai nhuong cho chu; dien thoai: mo hinh o nua tren, chu o duoi
       c.setFocalOffset(isWide() ? -ov.r * 0.55 : 0, isWide() ? -ov.r * 0.05 : ov.r * 0.5, 0, true);
     } else {
       const s = stops[Math.min(step, stops.length - 1)];
       c.setFocalOffset(isWide() ? -18 : 0, 0, 0, true);
       c.setLookAt(...s.cam, ...s.target, true);
+      // goc xoay ngang cong don sau nhieu vong (tu xoay, keo chuot): dua ve goc gan nhat de khong tua nguoc nhieu vong
+      c.normalizeRotations();
     }
   }, [mode, step, stops, bounds]);
 
