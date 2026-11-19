@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useGLTF, CameraControls, Html } from "@react-three/drei";
-import { MODEL_URL, splitScene } from "./Campus";
+import { MODEL_URL, splitScene } from "./campusModel";
 import { useGame } from "../game/store";
 import { zoneInfo } from "../data/zones";
 

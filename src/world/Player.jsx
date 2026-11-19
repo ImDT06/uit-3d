@@ -43,6 +43,10 @@ export default function Player() {
   const invertY = useSettings((s) => s.invertY);
 
   const ecctrl = useRef(null);
+  // chi khi chay dev: cho script kiem thu dieu khien nhan vat (khong co trong ban build)
+  useEffect(() => {
+    if (import.meta.env.DEV) window.__uitPlayer = ecctrl;
+  }, []);
   const cam = useRef(null);
   const [, getKeys] = useKeyboardControls();
   const gl = useThree((s) => s.gl);

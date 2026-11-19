@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useProgress } from "@react-three/drei";
 import { Joystick, VirtualButton } from "ecctrl/input";
 import { useGame } from "../game/store";
 import { useSettings, bindLabel } from "../game/settings";
@@ -8,20 +7,6 @@ import { ZONES, zoneInfo } from "../data/zones";
 import { Minimap, BigMap } from "./MapView";
 import Menu from "./Menu";
 import Tutorial from "./Tutorial";
-
-export function Loading() {
-  const { progress, active } = useProgress();
-  if (!active && progress >= 100) return null;
-  return (
-    <div className="loading">
-      <div className="loading-title">UIT 3D</div>
-      <div className="bar">
-        <div style={{ width: `${progress}%` }} />
-      </div>
-      <div className="loading-text">Đang tải khuôn viên... {progress.toFixed(0)}%</div>
-    </div>
-  );
-}
 
 // The thong tin toa nha: mo bang phim tuong tac (E)
 function ZoneCard() {

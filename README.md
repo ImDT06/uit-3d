@@ -18,6 +18,7 @@ trong khung Run and Debug).
 
 - `?play`: bỏ qua trang chủ, vào thẳng chế độ khám phá.
 - `?debug`: hiện khung va chạm, vùng khu vực, điểm vật phẩm.
+- `?fps`: hiện bộ đếm FPS (dùng khi thử trên điện thoại).
 
 ## Điều khiển
 

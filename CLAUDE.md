@@ -26,15 +26,21 @@ Website khám phá khuôn viên trường UIT (ĐH Công nghệ Thông tin, ĐHQ
 Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫn tương đối.
 
 - `src/world/` (trong Canvas 3D):
-  - `Campus.jsx`: tải `public/models/uit_campus.glb`, va chạm (tòa nhà khối đặc, còn lại trimesh), tường biên,
-    đọc `ZONE_*`/`ITEM_*`, nhãn tên tòa, tìm điểm xuất phát. `splitScene()` dùng chung với `IntroScene`.
+  - `campusModel.js`: `MODEL_URL`, `splitScene()` (tách cây, đọc `ZONE_*`/`ITEM_*`, dựng khối va chạm, cài bóng đổ).
+    Không import Rapier: trang chủ dùng file này mà không phải tải thư viện vật lý.
+  - `Explore.jsx`: `<Physics>` + Campus + Player + Waypoint, **tải lười** (`lazy`) cùng `ui/ExploreUi.jsx`;
+    `App.jsx` tải ngầm sau 2,5 s ở trang chủ. Đừng import Rapier/ecctrl/Campus/Player từ file thuộc trang chủ.
+  - `Campus.jsx`: va chạm (tòa nhà khối đặc, còn lại trimesh), tường biên, nhãn tên tòa, điểm xuất phát.
+  - `Sun.jsx`: ánh sáng + bóng. Khám phá: vùng bóng ±60 m đi theo nhân vật; trang chủ/tham quan: phủ cả trường.
+    Vật liệu glb đều 2 mặt nên `shadowSide = BackSide`; đất, lối đi, kính không đổ bóng (tránh vệt lấm tấm).
   - `Player.jsx`: điều khiển (bàn phím + joystick + tay cầm), camera (không xuyên tường), phát hiện khu vực.
   - `Student.jsx`: nhân vật sinh viên low-poly dựng bằng khối hình học, animation đi/chạy/nhảy
     tính bằng code theo vận tốc của ecctrl (không cần file model).
   - `Waypoint.jsx`: cột sáng đánh dấu điểm đến.
   - `IntroScene.jsx`: sa bàn trang chủ (tự xoay, bấm tòa để xem) + camera bay khi tham quan, danh sách điểm dừng.
 - `src/ui/` (HTML phủ lên cảnh): `Hud.jsx` (thẻ khu vực, tiến độ, màn hình tải, joystick mobile), `Menu.jsx`,
-  `MapView.jsx` (bản đồ nhỏ + lớn), `Tutorial.jsx`, `Admin.jsx` (phím Backquote, cạnh số 1), `IntroUi.jsx` (trang chủ + thẻ tham quan).
+  `MapView.jsx` (bản đồ nhỏ + lớn), `Tutorial.jsx`, `Admin.jsx` (phím Backquote, cạnh số 1), `IntroUi.jsx` (trang chủ + thẻ tham quan),
+  `Loading.jsx`, `FpsMeter.jsx` (`?fps`), `ExploreUi.jsx`.
 - `src/game/`: `store.js` (trạng thái), `settings.js` (cài đặt, phím), `actions.js` (phím tắt, chỉ chạy khi
   `mode === "explore"`), `sfx.js`.
 - `src/data/zones.js`: tên, mô tả, ảnh từng khu vực. Key = tên object trong Blender. Thẻ tham quan dùng chung.
@@ -73,7 +79,10 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
 ## Lệnh
 
 - `npm install` (lần đầu), `npm run dev` (chạy thử tại http://localhost:5173), `npm run build`
-- Thêm `?debug` vào URL để xem khung va chạm.
+- Thêm `?debug` vào URL để xem khung va chạm, `?fps` để hiện bộ đếm FPS (đo trên điện thoại thật).
+- Khi chạy dev có `window.__uitPlayer` (ref ecctrl) và `window.__uitR3f` (state R3F) cho script kiểm thử
+  (teleport, đẩy vận tốc, đọc `gl.info`); bản build không có.
+- `public/og.jpg`: ảnh xem trước khi gửi link (chụp từ trang chủ, 1200×630). Đổi giao diện trang chủ nhiều thì chụp lại.
 
 ## Việc tiếp theo (theo thứ tự)
 
@@ -81,8 +90,8 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
 1. Hệ thống nhiệm vụ: hiện vật phẩm tại các `ITEM_*` (đã có vị trí trong `store.items`), chạm là nhặt,
    danh sách nhiệm vụ trên HUD, lưu tiến độ localStorage. Nhiệm vụ mẫu: nhặt 12 vật phẩm; "khám phá đủ khu vực"
    chuyển từ bộ đếm `visited` thành nhiệm vụ.
-2. Sửa lỗi + tối ưu: thử va chạm khối đặc trong game (sát tường, góc, nhảy lên mái), vệt bóng lấm tấm trên tường
-   (shadow bias), FPS trên điện thoại, cảnh báo bundle > 500 kB (tách code), ảnh xem trước khi chia sẻ link (og:image).
+2. ~~Sửa lỗi + tối ưu~~ (xong 19/11: va chạm 304 lần thử không lọt, hết vệt bóng, JS lúc mở trang 3,6 → 1,3 MB,
+   og:image). Còn: đo FPS trên điện thoại thật bằng `?fps`.
 3. Nội dung `src/data/zones.js`: mô tả cho E, D, căn tin 2, chốt bảo vệ, X2 (X2 chưa rõ là gì), ảnh ở `public/images/`.
    Thẻ tham quan lấy nội dung từ đây.
 4. Minigame theo khu vực (quiz thư viện, căn tin...), easter egg.

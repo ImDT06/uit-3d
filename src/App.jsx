@@ -1,17 +1,22 @@
-import { Component, Suspense, useMemo, useState } from "react";
+import { Component, Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { KeyboardControls, Sky, PerformanceMonitor } from "@react-three/drei";
-import { Physics } from "@react-three/rapier";
-import Campus, { MODEL_URL } from "./world/Campus";
-import Player from "./world/Player";
-import Hud, { Loading } from "./ui/Hud";
-import Admin from "./ui/Admin";
-import Waypoint from "./world/Waypoint";
+import { MODEL_URL } from "./world/campusModel";
+import Sun from "./world/Sun";
+import Loading, { PreparingExplore } from "./ui/Loading";
+import FpsMeter, { fpsEnabled } from "./ui/FpsMeter";
 import IntroScene from "./world/IntroScene";
 import IntroUi from "./ui/IntroUi";
 import { useGame } from "./game/store";
 import { useSettings, HOLD_ACTIONS } from "./game/settings";
 import { useHotkeys } from "./game/actions";
+
+// Che do kham pha (vat ly Rapier ~2 MB, nhan vat, HUD) tai rieng: trang chu mo nhanh hon.
+// Tai truoc ngam khi dang o trang chu de bam "Vao kham pha" la vao ngay.
+const loadExplore = () => import("./world/Explore");
+const loadExploreUi = () => import("./ui/ExploreUi");
+const Explore = lazy(loadExplore);
+const ExploreUi = lazy(loadExploreUi);
 
 // Muc chat luong do hoa: do phan giai + bong do
 const QUALITY = {
@@ -58,15 +63,23 @@ class ModelErrorBoundary extends Component {
 }
 
 export default function App() {
-  const debug = useGame((s) => s.physicsDebug);
   const mode = useGame((s) => s.mode);
   const explore = mode === "explore";
-  const paused = useGame((s) => s.menuOpen || s.mapOpen);
   const binds = useSettings((s) => s.binds);
   const quality = useSettings((s) => s.quality);
   const [autoLevel, setAutoLevel] = useState("medium");
   const q = QUALITY[quality === "auto" ? autoLevel : quality];
   useHotkeys();
+
+  // o trang chu/tham quan: doi trang yen roi tai ngam phan kham pha
+  useEffect(() => {
+    if (explore) return;
+    const t = setTimeout(() => {
+      loadExplore();
+      loadExploreUi();
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [explore]);
 
   // bang phim giu (di, nhay, chay) lay tu cai dat, doi phim la cap nhat ngay
   const keyboardMap = useMemo(() => HOLD_ACTIONS.map((name) => ({ name, keys: binds[name] || [] })), [binds]);
@@ -80,6 +93,9 @@ export default function App() {
           camera={{ fov: 55, near: 0.1, far: 3000, position: [0, 30, 40] }}
           onContextMenu={(e) => e.preventDefault()}
           gl={{ alpha: true }}
+          onCreated={(state) => {
+            if (import.meta.env.DEV) window.__uitR3f = state; // cho script kiem thu doc renderer.info
+          }}
           className={`scene scene-${mode}`}
         >
           {/* che do Tu dong: may chay muot thi tang, giat thi giam chat luong */}
@@ -95,43 +111,20 @@ export default function App() {
           {mode !== "intro" && <fog attach="fog" args={["#bfe3ff", 150, 650]} />}
           {mode !== "intro" && <Sky sunPosition={[120, 80, 60]} />}
           <hemisphereLight args={["#ffffff", "#8a8f7a", 0.8]} />
-          <directionalLight
-            key={q.mapSize}
-            position={[120, 160, 80]}
-            intensity={2}
-            castShadow={q.shadows}
-            shadow-mapSize={[q.mapSize, q.mapSize]}
-            shadow-camera-left={-250}
-            shadow-camera-right={250}
-            shadow-camera-top={250}
-            shadow-camera-bottom={-250}
-            shadow-camera-far={600}
-            shadow-bias={-0.0005}
-          />
+          <Sun shadows={q.shadows} mapSize={q.mapSize} follow={explore} />
           <Suspense fallback={null}>
-            {explore ? (
-              <>
-                <Physics debug={debug} paused={paused}>
-                  <Campus />
-                  <Player />
-                </Physics>
-                <Waypoint />
-              </>
-            ) : (
-              <IntroScene />
-            )}
+            {explore ? <Explore /> : <IntroScene />}
           </Suspense>
         </Canvas>
         {explore ? (
-          <>
-            <Hud />
-            <Admin />
-            <div className="fade-in" />
-          </>
+          <Suspense fallback={<PreparingExplore />}>
+            <ExploreUi />
+          </Suspense>
         ) : (
           <IntroUi />
         )}
         <Loading />
+        {fpsEnabled && <FpsMeter />}
       </KeyboardControls>
     </ModelErrorBoundary>
   );

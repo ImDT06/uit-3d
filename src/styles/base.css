@@ -45,6 +45,7 @@ html, body, #root {
 .bar { width: 260px; height: 8px; border-radius: 99px; background: rgba(255, 255, 255, 0.2); overflow: hidden; }
 .bar div { height: 100%; background: #5b8cff; transition: width 0.2s; }
 .loading-text { font-size: 14px; opacity: 0.8; }
+.loading-soft { background: rgba(255, 255, 255, 0.85); color: #10204a; }
 
 .error {
   max-width: 560px;
@@ -55,3 +56,15 @@ html, body, #root {
   font-size: 15px;
 }
 .error pre { white-space: pre-wrap; color: #b00; font-size: 12px; }
+.fps-meter {
+  position: fixed;
+  left: 50%;
+  bottom: 6px;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  font: 700 12px/1.4 ui-monospace, monospace;
+  z-index: 200;
+  pointer-events: none;
+}
