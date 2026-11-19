@@ -77,6 +77,8 @@ def main():
         export_yup=True,
         export_extras=True,       # giu ten va thong tin OSM
         export_materials="EXPORT",
+        export_image_format="JPEG",   # texture lap + anh AO (uit_bake.py): JPEG nhe hon PNG nhieu
+        export_image_quality=82,
     )
     try:
         bpy.ops.export_scene.gltf(**common,

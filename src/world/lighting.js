@@ -1,6 +1,6 @@
 // Kieu anh sang tren web. Phai khop PRESETS trong tools/blender/uit_lightbake.py (anh sang da nuong):
 // sun = huong toi mat troi (three x,y,z) = Blender sun_dir (x,y,z) -> (x, z, -y).
-// Mac dinh "trua"; ?nang=sang / ?nang=chieu de xem thu (kem ?model=... da nuong cung kieu).
+// Mac dinh "sang" (mo hinh chinh nuong kieu nay); ?nang=trua / ?nang=chieu de xem thu (kem ?model=... cung kieu).
 const PRESETS = {
   trua: {
     sun: [120, 160, 80],
@@ -26,4 +26,4 @@ const PRESETS = {
 };
 
 const pick = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("nang");
-export const LIGHT = PRESETS[pick] || PRESETS.trua;
+export const LIGHT = PRESETS[pick] || PRESETS.sang;

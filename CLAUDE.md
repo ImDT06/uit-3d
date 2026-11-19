@@ -102,8 +102,9 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
   bo cạnh (node Bevel) vào texture; kiểu ánh sáng `LIGHT` = `sang` / `trua` / `chieu` (bảng `PRESETS`, phải khớp
   `src/world/lighting.js`). Object đã nướng có custom prop `baked` → web dùng `MeshBasicMaterial` (không tính đèn,
   không nhận bóng thời gian thực; nhân vật có vệt bóng tròn dưới chân). Bản thử xuất ra `public/models/uit_campus_bakeB*.glb`,
-  xem bằng `?model=uit_campus_bakeB_sang&nang=sang` (chưa commit glb thử). Chủ dự án chọn kiểu `sang` (19/11);
-  chưa đưa vào mô hình chính, chưa nướng tòa khác (chỉ nướng thêm khi chủ dự án bảo rõ tòa nào).
+  xem bằng `?model=uit_campus_bakeB_sang&nang=sang` (chưa commit glb thử). Chủ dự án chọn kiểu `sang` (19/11),
+  đã đưa vào mô hình chính (B, sân bậc, mặt đất, lối đi; web mặc định nắng sáng). Tòa khác chưa nướng
+  (chỉ nướng thêm khi chủ dự án bảo rõ tòa nào). Bản .blend trước khi nướng: `uit_blockout_truoc_nuong.blend`.
 - Xuất ra web bằng script `uit_export.py` trong Blender → `public/models/uit_campus.glb` (nén Draco).
   Trục: Blender Z-up → glTF Y-up; 1 đơn vị = 1 m; gốc tọa độ = tâm khuôn viên.
 
