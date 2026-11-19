@@ -98,12 +98,18 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
   Ảnh flycam (Kỷ yếu Sài Gòn) chỉ dùng làm mẫu dựng, không đưa lên web.
 - Va chạm trên web: tòa nhà là khối đặc (mỗi tam giác mặt đáy dựng thành lăng trụ, `ConvexHullCollider`),
   không dùng trimesh vì tường mỏng làm nhân vật lọt vào trong. Mặt đất, lối đi, `GATE_*` vẫn dùng trimesh.
+- Nướng ánh sáng (đang thử, mới có B + mặt đất/lối đi/sân bậc): `uit_lightbake.py` nướng nắng, bóng mềm, ánh sáng dội,
+  bo cạnh (node Bevel) vào texture; kiểu ánh sáng `LIGHT` = `sang` / `trua` / `chieu` (bảng `PRESETS`, phải khớp
+  `src/world/lighting.js`). Object đã nướng có custom prop `baked` → web dùng `MeshBasicMaterial` (không tính đèn,
+  không nhận bóng thời gian thực; nhân vật có vệt bóng tròn dưới chân). Bản thử xuất ra `public/models/uit_campus_bakeB*.glb`,
+  xem bằng `?model=uit_campus_bakeB_sang&nang=sang` (chưa commit glb thử). Chưa chọn kiểu ánh sáng cuối cùng.
 - Xuất ra web bằng script `uit_export.py` trong Blender → `public/models/uit_campus.glb` (nén Draco).
   Trục: Blender Z-up → glTF Y-up; 1 đơn vị = 1 m; gốc tọa độ = tâm khuôn viên.
 
 ## Lệnh
 
 - `npm install` (lần đầu), `npm run dev` (chạy thử tại http://localhost:5173), `npm run build`
+- `?model=<tên>`: dùng `public/models/<tên>.glb` thay bản chính; `?nang=sang|chieu`: kiểu mặt trời trên web.
 - Thêm `?debug` vào URL để xem khung va chạm, `?fps` để hiện bộ đếm FPS (đo trên điện thoại thật).
 - `?toa=C` (hoặc `?toa=CanTin`...): xem riêng một tòa, xoay/zoom tự do (`world/BuildingPreview.jsx`, `ui/PreviewUi.jsx`).
   Quy trình dựng chi tiết: sửa script → dựng lại → gửi ảnh + link `?toa=` cho chủ dự án duyệt → mới commit.

@@ -1,14 +1,15 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { playerPos } from "../game/store";
+import { LIGHT } from "./lighting";
 
-const SUN = [120, 160, 80]; // huong mat troi: vi tri den so voi diem duoc chieu
+const SUN = LIGHT.sun; // huong mat troi: vi tri den so voi diem duoc chieu
 const CAMPUS_CENTER = [25, 0, 15]; // giua GND_Base (toa do three; Blender x -200..250, y -230..200)
 
 // Mat troi + bong do.
 // follow (che do kham pha): vung bong nho quanh nhan vat, di theo nhan vat -> cung kich thuoc shadow map
 // ma bong sac hon nhieu lan. Khong follow (trang chu, tham quan): vung bong phu ca khuon vien.
-export default function Sun({ shadows, mapSize, follow }) {
+export default function Sun({ shadows, mapSize, follow, color = LIGHT.sunColor, intensity = LIGHT.sunIntensity }) {
   const light = useRef();
   const scene = useThree((s) => s.scene);
   const R = follow ? 60 : 260;
@@ -37,7 +38,8 @@ export default function Sun({ shadows, mapSize, follow }) {
     <directionalLight
       key={`${mapSize}-${follow}`}
       ref={light}
-      intensity={2}
+      intensity={intensity}
+      color={color}
       castShadow={shadows}
       shadow-mapSize={[mapSize, mapSize]}
       shadow-camera-left={-R}

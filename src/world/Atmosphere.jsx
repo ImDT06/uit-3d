@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Sky } from "@react-three/drei";
+import { LIGHT } from "./lighting";
 
 const SKY_COLOR = "#bfe3ff";
 const lerp = THREE.MathUtils.lerp;
@@ -56,7 +57,7 @@ export default function Atmosphere({ on, fog = true }) {
   return (
     <>
       {fog && <fog ref={fogRef} attach="fog" args={[SKY_COLOR, 3000, 6000]} />}
-      <Sky ref={sky} sunPosition={[120, 80, 60]} />
+      <Sky ref={sky} sunPosition={LIGHT.skySun} />
     </>
   );
 }

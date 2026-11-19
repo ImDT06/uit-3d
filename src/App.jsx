@@ -5,6 +5,7 @@ import { KeyboardControls, PerformanceMonitor } from "@react-three/drei";
 import { MODEL_URL } from "./world/campusModel";
 import Sun from "./world/Sun";
 import Atmosphere from "./world/Atmosphere";
+import { LIGHT } from "./world/lighting";
 import Loading, { PreparingExplore } from "./ui/Loading";
 import FpsMeter, { fpsEnabled } from "./ui/FpsMeter";
 import IntroScene from "./world/IntroScene";
@@ -113,7 +114,7 @@ export default function App() {
           )}
           {/* trang chu: nen trong suot (nen CSS phia sau), khong suong mu; vao tham quan thi troi/suong mu hien dan */}
           <Atmosphere on={mode !== "intro" || !!previewName} fog={!previewName} />
-          <hemisphereLight args={["#ffffff", "#8a8f7a", 0.8]} />
+          <hemisphereLight args={LIGHT.hemi} />
           <Sun shadows={q.shadows} mapSize={q.mapSize} follow={explore} />
           <Suspense fallback={null}>
             {previewName ? <BuildingPreview name={previewName} /> : explore ? <Explore /> : <IntroScene />}

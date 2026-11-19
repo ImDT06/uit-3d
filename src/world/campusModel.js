@@ -3,7 +3,9 @@
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 
-export const MODEL_URL = "/models/uit_campus.glb";
+// ?model=uit_campus_bakeB: xem thu file glb khac trong public/models (vd ban nuong anh sang dang duyet)
+const altModel = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("model");
+export const MODEL_URL = altModel && /^[\w-]+$/.test(altModel) ? `/models/${altModel}.glb` : "/models/uit_campus.glb";
 
 // Tach cay (TREE_*) ra nhom rieng: cay khong dung va cham luoi tam giac (nang),
 // moi cay chi co mot tru va cham o than.
@@ -25,10 +27,22 @@ export function splitScene(scene) {
     return false;
   };
   const shadowMat = (m) => [m.material].flat().forEach((mat) => (mat.shadowSide = THREE.BackSide));
+  // Object da nuong anh sang trong Blender (uit_lightbake.py, extras.baked): anh da gom nang, bong, anh sang doi
+  // -> hien thang mau anh, khong tinh den/bong lai (khong toneMapped: giu dung mau da canh trong Blender)
+  const baked = (o) => {
+    for (let p = o; p && p !== scene; p = p.parent) if (p.userData.baked) return true;
+    return false;
+  };
   scene.traverse((o) => {
     if (!o.isMesh) return;
     o.castShadow = !flat(o);
-    o.receiveShadow = true;
+    if (baked(o) && o.material.map) {
+      const old = o.material;
+      o.material = new THREE.MeshBasicMaterial({ map: old.map, side: old.side, toneMapped: false, name: old.name });
+      o.receiveShadow = false;
+    } else {
+      o.receiveShadow = true;
+    }
     shadowMat(o);
   });
   deco.traverse((o) => {

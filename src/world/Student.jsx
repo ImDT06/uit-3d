@@ -24,6 +24,25 @@ function useMats() {
   }, []);
 }
 
+// Vet bong tron mem duoi chan: mat dat da nuong anh sang (MeshBasicMaterial) khong nhan bong thoi gian thuc,
+// thieu vet nay nhan vat trong nhu lo lung. Tren mat chua nuong no lam bong tiep dat.
+let blobTex = null;
+function blobTexture() {
+  if (blobTex) return blobTex;
+  const n = 64;
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = n;
+  const g = cv.getContext("2d");
+  const grd = g.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
+  grd.addColorStop(0, "rgba(0,0,0,1)");
+  grd.addColorStop(0.5, "rgba(0,0,0,0.6)");
+  grd.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = grd;
+  g.fillRect(0, 0, n, n);
+  blobTex = new THREE.CanvasTexture(cv);
+  return blobTex;
+}
+
 function Limb({ refObj, position, size, mat, end, endMat, endSize }) {
   // nhom xoay quanh khop (vai / hong), chi treo xuong duoi
   return (
@@ -50,6 +69,11 @@ export default function Student({ controller, hidden = false }) {
   const armR = useRef();
   const phase = useRef(0);
   const air = useRef(0);
+  const blob = useRef();
+  const blobMat = useMemo(
+    () => new THREE.MeshBasicMaterial({ map: blobTexture(), color: "#000", transparent: true, opacity: 0.4, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }),
+    []
+  );
 
   useFrame((state, dt) => {
     const c = controller.current;
@@ -87,10 +111,19 @@ export default function Student({ controller, hidden = false }) {
     const turn = c.currAngVel ? c.currAngVel.y : 0;
     const lean = THREE.MathUtils.clamp(-turn * speed * 0.025, -0.3, 0.3);
     root.current.rotation.z = THREE.MathUtils.damp(root.current.rotation.z, moving && !inAir ? lean : 0, 6, d);
+
+    // vet bong: nhay len thi mo + nho lai (vet di theo nhan vat, khong do mat dat)
+    if (blob.current) {
+      blobMat.opacity = 0.4 * (1 - a);
+      blob.current.scale.setScalar(1 - 0.4 * a);
+    }
   });
 
   return (
     <group ref={root} visible={!hidden}>
+      <mesh ref={blob} position={[0, -0.97, 0]} rotation-x={-Math.PI / 2} material={blobMat} renderOrder={1}>
+        <planeGeometry args={[0.9, 0.9]} />
+      </mesh>
       <group ref={body}>
         {/* chan */}
         <Limb refObj={legL} position={[0.11, -0.16, 0]} size={[0.16, 0.74, 0.18]} mat={m.pants}
