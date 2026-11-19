@@ -1,0 +1,219 @@
+/* Trang chu + che do tham quan + hieu ung vao kham pha */
+.scene { transition: background 0.8s ease; }
+.scene-intro {
+  background:
+    radial-gradient(1200px 700px at 72% 45%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(160deg, #dcefff 0%, #eaf3ff 45%, #fff3df 100%);
+}
+
+.intro {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  animation: intro-in 0.8s ease-out both;
+}
+@keyframes intro-in { from { opacity: 0; } to { opacity: 1; } }
+.intro::before {
+  /* nen mo sau phan chu de mo hinh xoay qua khong lam kho doc */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(236, 245, 255, 0.92) 0%, rgba(236, 245, 255, 0.7) 32%, rgba(236, 245, 255, 0) 48%);
+}
+.intro-hero {
+  position: absolute;
+  left: clamp(20px, 6vw, 96px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(520px, calc(100vw - 40px));
+  color: var(--navy);
+  pointer-events: auto;
+}
+.intro-hero > * { animation: rise-up 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.intro-hero > *:nth-child(2) { animation-delay: 0.08s; }
+.intro-hero > *:nth-child(3) { animation-delay: 0.16s; }
+.intro-hero > *:nth-child(4) { animation-delay: 0.24s; }
+.intro-hero > *:nth-child(5) { animation-delay: 0.3s; }
+.intro-hero > *:nth-child(6) { animation-delay: 0.36s; }
+@keyframes rise-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+.intro-eyebrow {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(31, 79, 216, 0.1);
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.intro h1 {
+  margin: 16px 0 14px;
+  font-size: clamp(38px, 5.4vw, 68px);
+  line-height: 1.04;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.intro h1 span {
+  color: var(--blue);
+  background: linear-gradient(transparent 62%, rgba(255, 210, 63, 0.7) 62%);
+  padding: 0 4px;
+}
+.intro-hero p {
+  margin: 0 0 26px;
+  max-width: 460px;
+  font-size: clamp(15px, 1.3vw, 17px);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.intro-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn-primary, .btn-ghost {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 13px 22px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.btn-primary {
+  border: 0;
+  color: #fff;
+  background: linear-gradient(135deg, var(--blue), var(--blue-2));
+  box-shadow: 0 10px 24px rgba(31, 79, 216, 0.35);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(31, 79, 216, 0.45); }
+.btn-primary span { display: inline-block; transition: transform 0.15s ease; }
+.btn-primary:hover span { transform: translateX(3px); }
+.btn-ghost {
+  color: var(--navy);
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(14, 31, 77, 0.15);
+  backdrop-filter: blur(8px);
+}
+.btn-ghost:hover:not(:disabled) { background: #fff; transform: translateY(-2px); }
+.btn-ghost:disabled { opacity: 0.35; cursor: default; }
+.intro-hint { margin-top: 14px; font-size: 13px; color: var(--ink-2); opacity: 0.8; }
+.intro-stats {
+  display: flex;
+  gap: 26px;
+  margin: 34px 0 0;
+  padding: 18px 0 0;
+  list-style: none;
+  border-top: 1px solid rgba(14, 31, 77, 0.12);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.intro-stats b { display: block; font-size: 22px; color: var(--navy); }
+.intro-foot {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  font-size: 12px;
+  color: var(--ink-2);
+  opacity: 0.7;
+}
+.intro-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: 12px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 14px;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+.intro-tip span { font-size: 11px; color: var(--sun); font-weight: 600; }
+
+/* the tham quan */
+.tour { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+.tour-top {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+}
+.tour-top button {
+  pointer-events: auto;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  color: #fff;
+  background: rgba(14, 31, 77, 0.8);
+  backdrop-filter: blur(6px);
+}
+.tour-top button:hover { background: var(--navy); }
+.tour-card {
+  position: absolute;
+  left: clamp(16px, 4vw, 56px);
+  bottom: clamp(16px, 5vh, 56px);
+  width: min(400px, calc(100vw - 32px));
+  padding: 22px 24px 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 50px rgba(14, 31, 77, 0.22);
+  pointer-events: auto;
+  animation: card-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes card-in { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: none; } }
+.tour-card img { width: 100%; border-radius: 12px; margin-bottom: 12px; }
+.tour-count { font-size: 13px; font-weight: 800; color: var(--blue); margin-bottom: 10px; letter-spacing: 0.05em; }
+.tour-count span { color: #9aa6c2; font-weight: 600; }
+.tour-card h2 { margin: 2px 0 8px; font-size: 28px; font-weight: 800; color: var(--navy); letter-spacing: -0.01em; }
+.tour-card p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-2); }
+.tour-dots { display: flex; gap: 6px; margin: 18px 0 16px; }
+.tour-dots button {
+  flex: 1;
+  height: 5px;
+  padding: 0;
+  border: 0;
+  border-radius: 99px;
+  background: #dfe5f2;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.tour-dots button.done { background: #a9bdf2; }
+.tour-dots button.on { background: var(--blue); }
+.tour-nav { display: flex; gap: 10px; }
+.tour-nav .btn-primary { flex: 1; }
+
+/* vao che do kham pha: chop trang roi mo dan */
+.fade-in {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  pointer-events: none;
+  z-index: 90;
+  animation: fade-out 0.9s ease-out forwards;
+}
+@keyframes fade-out { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+
+@media (max-width: 900px) {
+  .intro::before { display: none; }
+  .intro-hero {
+    top: auto;
+    bottom: 24px;
+    transform: none;
+    padding: 20px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(10px);
+  }
+  .intro h1 { margin: 12px 0 10px; }
+  .intro-hero p { margin-bottom: 18px; font-size: 14px; }
+  .intro-stats { display: none; }
+  .intro-foot { display: none; }
+  .btn-primary, .btn-ghost { padding: 12px 16px; font-size: 14px; }
+  .tour-card { padding: 18px; }
+  .tour-card h2 { font-size: 22px; }
+}

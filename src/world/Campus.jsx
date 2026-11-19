@@ -2,8 +2,8 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useGLTF, Html } from "@react-three/drei";
 import { RigidBody, CylinderCollider, CuboidCollider, ConvexHullCollider } from "@react-three/rapier";
-import { useGame } from "./store";
-import { zoneInfo } from "./zones";
+import { useGame } from "../game/store";
+import { zoneInfo } from "../data/zones";
 
 export const MODEL_URL = "/models/uit_campus.glb";
 

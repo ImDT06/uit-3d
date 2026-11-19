@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useGame, playerPos } from "./store";
-import { zoneInfo } from "./zones";
-import { bindLabel } from "./settings";
+import { useGame, playerPos } from "../game/store";
+import { zoneInfo } from "../data/zones";
+import { bindLabel } from "../game/settings";
 
 const DEG = 180 / Math.PI;
 

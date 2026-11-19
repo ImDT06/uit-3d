@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useProgress } from "@react-three/drei";
 import { Joystick, VirtualButton } from "ecctrl/input";
-import { useGame } from "./store";
-import { useSettings, bindLabel } from "./settings";
-import { doAction } from "./actions";
-import { ZONES, zoneInfo } from "./zones";
+import { useGame } from "../game/store";
+import { useSettings, bindLabel } from "../game/settings";
+import { doAction } from "../game/actions";
+import { ZONES, zoneInfo } from "../data/zones";
 import { Minimap, BigMap } from "./MapView";
 import Menu from "./Menu";
 import Tutorial from "./Tutorial";

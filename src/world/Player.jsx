@@ -5,10 +5,10 @@ import * as THREE from "three";
 import { Ecctrl } from "ecctrl";
 import { EcctrlCameraControls } from "ecctrl/camera";
 import { useJoystickStore, useButtonStore } from "ecctrl/input";
-import { useGame, playerPos } from "./store";
-import { useSettings } from "./settings";
-import { doAction } from "./actions";
-import { sfx } from "./sfx";
+import { useGame, playerPos } from "../game/store";
+import { useSettings } from "../game/settings";
+import { doAction } from "../game/actions";
+import { sfx } from "../game/sfx";
 import Student from "./Student";
 
 const SHOULDER_OFFSET = 1.2;  // m: lech camera sang phai khi shift lock

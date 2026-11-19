@@ -2,15 +2,16 @@ import { Component, Suspense, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { KeyboardControls, Sky, PerformanceMonitor } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
-import Campus, { MODEL_URL } from "./Campus";
-import Player from "./Player";
-import Hud, { Loading } from "./Hud";
-import Admin from "./Admin";
-import Waypoint from "./Waypoint";
-import { IntroScene, IntroUi } from "./Intro";
-import { useGame } from "./store";
-import { useSettings, HOLD_ACTIONS } from "./settings";
-import { useHotkeys } from "./actions";
+import Campus, { MODEL_URL } from "./world/Campus";
+import Player from "./world/Player";
+import Hud, { Loading } from "./ui/Hud";
+import Admin from "./ui/Admin";
+import Waypoint from "./world/Waypoint";
+import IntroScene from "./world/IntroScene";
+import IntroUi from "./ui/IntroUi";
+import { useGame } from "./game/store";
+import { useSettings, HOLD_ACTIONS } from "./game/settings";
+import { useHotkeys } from "./game/actions";
 
 // Muc chat luong do hoa: do phan giai + bong do
 const QUALITY = {

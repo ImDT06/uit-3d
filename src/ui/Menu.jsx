@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useGame } from "./store";
-import { useSettings, ACTIONS, keyName } from "./settings";
+import { useGame } from "../game/store";
+import { useSettings, ACTIONS, keyName } from "../game/settings";
 
 function Row({ label, children }) {
   return (

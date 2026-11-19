@@ -1,0 +1,41 @@
+/* Ban do nho + ban do lon */
+/* ---- Ban do nho ---- */
+.minimap {
+  position: fixed; left: 16px; bottom: 16px; width: 140px; height: 140px;
+  border-radius: 50%; overflow: hidden; border: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); cursor: pointer; background: #cfe6c4;
+}
+.minimap svg { width: 100%; height: 100%; display: block; }
+.minimap-n {
+  position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px;
+  border-radius: 50%; background: #d33; color: #fff; font-size: 10px; font-weight: 800;
+  line-height: 18px; text-align: center; pointer-events: none;
+}
+.minimap-dist {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  padding: 1px 8px; border-radius: 99px; background: #ffd23f; color: #10204a;
+  font-size: 11px; font-weight: 800;
+}
+.map-ground { fill: #cfe6c4; }
+.map-bld { fill: #8c97b8; stroke: #fff; stroke-width: 0.6; }
+.map-bld.seen { fill: #5b7bd6; }
+.map-bld.cur { fill: #2f5bd3; stroke: #ffd23f; stroke-width: 1.2; }
+.map-label { fill: #fff; font-weight: 800; text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: #10204a; stroke-width: 0.6px; }
+.map-me { fill: #ff4757; stroke: #fff; stroke-width: 0.25; }
+.map-pin { fill: rgba(255, 210, 63, 0.45); stroke: #ffd23f; stroke-width: 0.3; }
+.map-pin-dot { fill: #ffb400; }
+
+/* ---- Ban do lon ---- */
+.bigmap-wrap {
+  position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+  background: rgba(10, 20, 45, 0.55); padding: 16px;
+}
+.bigmap {
+  width: min(900px, 100%); max-height: 100%; display: flex; flex-direction: column;
+  border-radius: 16px; overflow: hidden; background: #fff; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+.bigmap-head, .bigmap-foot { display: flex; align-items: center; gap: 12px; padding: 10px 14px; color: #10204a; font-size: 13px; flex-wrap: wrap; }
+.bigmap-head span { opacity: 0.65; flex: 1; }
+.bigmap-head button { border: 0; background: none; font-size: 22px; cursor: pointer; color: #667; }
+.bigmap svg { width: 100%; min-height: 0; flex: 1; max-height: 70vh; cursor: crosshair; background: #cfe6c4; }
+.bigmap-foot button { margin-left: auto; padding: 5px 10px; border: 0; border-radius: 8px; background: #eef1f8; cursor: pointer; font: inherit; }

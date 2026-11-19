@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useGame } from "./store";
+import { useGame } from "../game/store";
 
 // Cot sang danh dau diem dich tren ban do (nhin thay tu xa)
 export default function Waypoint() {

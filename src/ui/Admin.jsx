@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useGame, playerPos, DEFAULT_TUNING } from "./store";
-import { ZONES, zoneInfo } from "./zones";
+import { useGame, playerPos, DEFAULT_TUNING } from "../game/store";
+import { ZONES, zoneInfo } from "../data/zones";
 
 // Bang admin de test: bat/tat bang phim ` (canh so 1)
 // Chi co khi chay dev (npm run dev) hoac them ?admin vao URL

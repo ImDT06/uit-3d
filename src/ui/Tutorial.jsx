@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useGame } from "./store";
-import { bindLabel, useSettings } from "./settings";
+import { useGame } from "../game/store";
+import { bindLabel, useSettings } from "../game/settings";
 
 // Huong dan lan dau: tung buoc, tu qua buoc khi nguoi choi lam dung
 function steps() {

@@ -17,22 +17,32 @@ Website khám phá khuôn viên trường UIT (ĐH Công nghệ Thông tin, ĐHQ
 - Vite + React 19 + React Three Fiber 9 + drei
 - Vật lý: @react-three/rapier
 - Nhân vật: `ecctrl` v2. Lưu ý: v2 **không** tự đọc bàn phím. Input được đưa vào bằng
-  `ecctrl.current.setMovement({...})` mỗi frame (xem `src/Player.jsx`), camera dùng
+  `ecctrl.current.setMovement({...})` mỗi frame (xem `src/world/Player.jsx`), camera dùng
   `EcctrlCameraControls` và tự `moveTo` theo `currPos`.
-- State: zustand (`src/store.js`)
+- State: zustand (`src/game/store.js`)
 
 ## Cấu trúc
 
-- `src/Campus.jsx`: tải `public/models/uit_campus.glb`, va chạm trimesh, nhãn tên tòa nhà,
-  tìm điểm xuất phát không nằm trong tòa nhà.
-- `src/Player.jsx`: điều khiển (bàn phím + joystick), camera (không xuyên tường), phát hiện đang ở gần tòa nào.
-- `src/Student.jsx`: nhân vật sinh viên low-poly dựng bằng khối hình học, animation đi/chạy/nhảy
-  tính bằng code theo vận tốc của ecctrl (không cần file model).
-- `src/Intro.jsx`: trang chủ (sa bàn thu nhỏ tự xoay, bấm tòa để xem) và chế độ tham quan (camera bay qua
-  cổng + các tòa). `store.mode`: `intro` → `tour` → `explore`, dùng chung Canvas và mô hình. `?play` vào thẳng khám phá.
-- `src/Hud.jsx`: giao diện (thẻ khu vực, tiến độ khám phá, hướng dẫn, màn hình tải, joystick mobile).
-- `src/zones.js`: tên, mô tả, ảnh từng khu vực. Key = tên object trong Blender.
-- `src/store.js`: trạng thái game.
+Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫn tương đối.
+
+- `src/world/` (trong Canvas 3D):
+  - `Campus.jsx`: tải `public/models/uit_campus.glb`, va chạm (tòa nhà khối đặc, còn lại trimesh), tường biên,
+    đọc `ZONE_*`/`ITEM_*`, nhãn tên tòa, tìm điểm xuất phát. `splitScene()` dùng chung với `IntroScene`.
+  - `Player.jsx`: điều khiển (bàn phím + joystick + tay cầm), camera (không xuyên tường), phát hiện khu vực.
+  - `Student.jsx`: nhân vật sinh viên low-poly dựng bằng khối hình học, animation đi/chạy/nhảy
+    tính bằng code theo vận tốc của ecctrl (không cần file model).
+  - `Waypoint.jsx`: cột sáng đánh dấu điểm đến.
+  - `IntroScene.jsx`: sa bàn trang chủ (tự xoay, bấm tòa để xem) + camera bay khi tham quan, danh sách điểm dừng.
+- `src/ui/` (HTML phủ lên cảnh): `Hud.jsx` (thẻ khu vực, tiến độ, màn hình tải, joystick mobile), `Menu.jsx`,
+  `MapView.jsx` (bản đồ nhỏ + lớn), `Tutorial.jsx`, `Admin.jsx` (phím Backquote, cạnh số 1), `IntroUi.jsx` (trang chủ + thẻ tham quan).
+- `src/game/`: `store.js` (trạng thái), `settings.js` (cài đặt, phím), `actions.js` (phím tắt, chỉ chạy khi
+  `mode === "explore"`), `sfx.js`.
+- `src/data/zones.js`: tên, mô tả, ảnh từng khu vực. Key = tên object trong Blender. Thẻ tham quan dùng chung.
+- `src/styles/*.css`: CSS theo phần. Thứ tự import trong `main.jsx` có ý nghĩa (`hud.css` sau `map.css`).
+- `store.mode`: `intro` → `tour` → `explore`, dùng chung Canvas và mô hình (một object chỉ gắn vào một nơi,
+  nên `IntroScene` và `Campus` không bao giờ mount cùng lúc). `?play` vào thẳng khám phá.
+- `tools/blender/`: script Blender (xem README trong đó). Trong .blend các Text đã liên kết tới file ở đây.
+- `.vscode/`: F5 chạy `npm run dev` rồi mở Chrome.
 
 ## Mô hình 3D
 
@@ -50,6 +60,7 @@ Website khám phá khuôn viên trường UIT (ĐH Công nghệ Thông tin, ĐHQ
   - Dự kiến: `COL_*` collider riêng
 - Chiều cao: số tầng x 3.5 m + 1 m. A, C: 3 tầng; D: 1; B: 9; E: 12 (B, E theo OSM, chưa xác nhận);
   căn tin 2; căn tin 2, chốt bảo vệ, X2: 1.
+- Script dựng mô hình ở `tools/blender/` (import → cleanup → fix → detail → gameplay → export).
 - Chi tiết tòa nhà + trồng cây + cổng chính: script `uit_detail.py` (chạy lại được, tự xóa chi tiết cũ).
   Kiểu riêng từng tòa trong bảng `STYLE` (A: tường trắng, mái cam, 2 vòm xanh ngọc; E: kính xanh liền,
   bảng tên trên mái). Cổng chính (`GATE_*`, collection Props) chỉnh vị trí qua biến `GATE`.
@@ -72,7 +83,7 @@ Website khám phá khuôn viên trường UIT (ĐH Công nghệ Thông tin, ĐHQ
    chuyển từ bộ đếm `visited` thành nhiệm vụ.
 2. Sửa lỗi + tối ưu: thử va chạm khối đặc trong game (sát tường, góc, nhảy lên mái), vệt bóng lấm tấm trên tường
    (shadow bias), FPS trên điện thoại, cảnh báo bundle > 500 kB (tách code), ảnh xem trước khi chia sẻ link (og:image).
-3. Nội dung `zones.js`: mô tả cho E, D, căn tin 2, chốt bảo vệ, X2 (X2 chưa rõ là gì), ảnh ở `public/images/`.
+3. Nội dung `src/data/zones.js`: mô tả cho E, D, căn tin 2, chốt bảo vệ, X2 (X2 chưa rõ là gì), ảnh ở `public/images/`.
    Thẻ tham quan lấy nội dung từ đây.
 4. Minigame theo khu vực (quiz thư viện, căn tin...), easter egg.
 5. Chi tiết từng tòa theo ảnh tự chụp (để ở `D:\uit3d\reference\<tòa>\`): C, B, căn tin, cổng sau, sân bóng;
