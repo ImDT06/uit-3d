@@ -62,10 +62,15 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
   - `ZONE_<tòa>` (empty hình hộp, collection Gameplay): vùng khu vực, đứng trong hộp = đang ở `BLD_<tòa>`
     (hoặc custom prop `zone`). `ITEM_###` (empty): điểm đặt vật phẩm, custom prop `quest`.
     Tạo bằng script `uit_gameplay.py` (chạy lại được), có thể kéo/sửa tay. Web đọc trong `Campus.jsx` → `store.zones/items`.
-  - Mép `GND_Base` = biên khuôn viên, web dựng tường vô hình theo đó.
+  - Mép `GND_Base` = biên khuôn viên (Blender x −200..250, y −230..200), web dựng tường vô hình theo đó.
+    Mặt đất/đường gốc chưa cắt nằm trong `D:\uit3d\blender\uit_blockout_backup_truoc_cat.blend` (cần khi nới biên).
+    `CAMPUS_CENTER` trong `src/world/Sun.jsx` là tâm khung này.
   - Dự kiến: `COL_*` collider riêng
-- Chiều cao: số tầng x 3.5 m + 1 m. A, C: 3 tầng; D: 1; B: 3 cấp mái 9/7/5 tầng (đầu tây → đầu đông, bảng
-  `TIERS` trong `uit_detail.py`, bản gốc giữ ở mesh `BLD_B_goc`); E: 12 (theo OSM, chưa xác nhận);
+- Chiều cao: số tầng x 3.5 m + 1 m. A, C: 3 tầng; D: 1; E: 12 (theo OSM, chưa xác nhận);
+  B: dựng lại thành vòng cung sạch (bảng `ARC` trong `uit_detail.py`: tâm, bán kính, góc, số tầng từng cấp
+  5/7/9 từ đầu đông sang đầu tây). Mặt trong theo ảnh "Sảnh nhà B": mảng tường trắng nhô ra có dải kính xanh
+  viền xanh dương + chân xanh lá, xen hành lang lõm có sàn và lan can. Mảng tường nằm trong mesh `BLD_B`
+  (có va chạm). Mặt bằng OSM gốc giữ ở `BLD_B_goc`. `TIERS` (cắt tầng theo trục X) dùng được cho tòa khác;
   căn tin 2; căn tin 2, chốt bảo vệ, X2: 1.
 - Script dựng mô hình ở `tools/blender/` (import → cleanup → fix → detail → gameplay → export).
 - Chi tiết tòa nhà + trồng cây + cổng chính: script `uit_detail.py` (chạy lại được, tự xóa chi tiết cũ).
