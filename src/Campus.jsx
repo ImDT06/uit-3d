@@ -25,7 +25,7 @@ function findSpawn(boxes) {
 
 // Tach cay (TREE_*) ra nhom rieng: cay khong dung va cham luoi tam giac (nang),
 // moi cay chi co mot tru va cham o than.
-function splitScene(scene) {
+export function splitScene(scene) {
   if (scene.userData.split) return scene.userData.split;
   const deco = new THREE.Group();
   const trees = [];
@@ -136,8 +136,9 @@ function splitScene(scene) {
   // tuong bien vo hinh quanh mep mat dat (GND_Base), khong cho di ra ngoai truong
   const walls = [];
   const base = scene.getObjectByName("GND_Base");
+  const bounds = base ? new THREE.Box3().setFromObject(base) : new THREE.Box3(new THREE.Vector3(-150, 0, -150), new THREE.Vector3(150, 0, 150));
   if (base) {
-    const b = new THREE.Box3().setFromObject(base);
+    const b = bounds;
     const H = 15, T = 1; // nua chieu cao, nua do day
     const cx = (b.min.x + b.max.x) / 2, cz = (b.min.z + b.max.z) / 2;
     const hx = (b.max.x - b.min.x) / 2 + T, hz = (b.max.z - b.min.z) / 2 + T;
@@ -148,7 +149,7 @@ function splitScene(scene) {
       { pos: [cx, H, b.max.z + T], args: [hx, H, T] }
     );
   }
-  scene.userData.split = { deco, trees, buildings, camBlockers, walls, zones, items, solids };
+  scene.userData.split = { deco, trees, buildings, camBlockers, walls, zones, items, solids, bounds };
   return scene.userData.split;
 }
 

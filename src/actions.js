@@ -6,6 +6,7 @@ import { unlockAudio } from "./sfx";
 // Hanh dong bam mot lan, dung chung cho ban phim, tay cam va nut cam ung
 export function doAction(id) {
   const g = useGame.getState();
+  if (g.mode !== "explore") return; // trang chu / tham quan co phim rieng
   switch (id) {
     case "menu":
       if (g.mapOpen) return g.setUi({ mapOpen: false });

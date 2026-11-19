@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // F5: chay npm run dev roi mo Chrome; dat breakpoint trong src/ duoc luon
+      "name": "Mở web (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "vite dev"
+    },
+    {
+      "name": "Mở web (Edge)",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "vite dev"
+    },
+    {
+      "name": "Mở web, vào thẳng khám phá (?play)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173/?play",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "vite dev"
+    }
+  ]
+}

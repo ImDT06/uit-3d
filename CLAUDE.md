@@ -28,6 +28,8 @@ Website khám phá khuôn viên trường UIT (ĐH Công nghệ Thông tin, ĐHQ
 - `src/Player.jsx`: điều khiển (bàn phím + joystick), camera (không xuyên tường), phát hiện đang ở gần tòa nào.
 - `src/Student.jsx`: nhân vật sinh viên low-poly dựng bằng khối hình học, animation đi/chạy/nhảy
   tính bằng code theo vận tốc của ecctrl (không cần file model).
+- `src/Intro.jsx`: trang chủ (sa bàn thu nhỏ tự xoay, bấm tòa để xem) và chế độ tham quan (camera bay qua
+  cổng + các tòa). `store.mode`: `intro` → `tour` → `explore`, dùng chung Canvas và mô hình. `?play` vào thẳng khám phá.
 - `src/Hud.jsx`: giao diện (thẻ khu vực, tiến độ khám phá, hướng dẫn, màn hình tải, joystick mobile).
 - `src/zones.js`: tên, mô tả, ảnh từng khu vực. Key = tên object trong Blender.
 - `src/store.js`: trạng thái game.
@@ -64,7 +66,14 @@ Website khám phá khuôn viên trường UIT (ĐH Công nghệ Thông tin, ĐHQ
 
 ## Việc tiếp theo (theo thứ tự)
 
-1. Hệ thống nhiệm vụ + một nhiệm vụ mẫu (nhặt vật phẩm rải quanh trường), danh sách nhiệm vụ trên HUD.
-2. Điền nội dung + ảnh cho từng khu vực trong `zones.js` (ảnh để ở `public/images/`).
-3. Minigame theo khu vực (quiz thư viện, căn tin...), easter egg.
-4. Chi tiết riêng cho từng tòa theo ảnh thật (cổng trường, sảnh, màu sắc), collider riêng nhẹ hơn, bake ánh sáng.
+0. Kiểm tra trang chủ + tham quan trên máy và điện thoại thật, commit, push để Vercel deploy.
+1. Hệ thống nhiệm vụ: hiện vật phẩm tại các `ITEM_*` (đã có vị trí trong `store.items`), chạm là nhặt,
+   danh sách nhiệm vụ trên HUD, lưu tiến độ localStorage. Nhiệm vụ mẫu: nhặt 12 vật phẩm; "khám phá đủ khu vực"
+   chuyển từ bộ đếm `visited` thành nhiệm vụ.
+2. Sửa lỗi + tối ưu: thử va chạm khối đặc trong game (sát tường, góc, nhảy lên mái), vệt bóng lấm tấm trên tường
+   (shadow bias), FPS trên điện thoại, cảnh báo bundle > 500 kB (tách code), ảnh xem trước khi chia sẻ link (og:image).
+3. Nội dung `zones.js`: mô tả cho E, D, căn tin 2, chốt bảo vệ, X2 (X2 chưa rõ là gì), ảnh ở `public/images/`.
+   Thẻ tham quan lấy nội dung từ đây.
+4. Minigame theo khu vực (quiz thư viện, căn tin...), easter egg.
+5. Chi tiết từng tòa theo ảnh tự chụp (để ở `D:\uit3d\reference\<tòa>\`): C, B, căn tin, cổng sau, sân bóng;
+   xác nhận vị trí cổng chính (`GATE`). Chưa làm tới khi có ảnh.

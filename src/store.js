@@ -25,7 +25,21 @@ function loadFlag(key) {
 export const playerPos = { x: 0, y: 0, z: 0, yaw: 0, camYaw: 0, running: false };
 
 // Trang thai chung cua game
+// Che do: intro (trang chu, mo hinh thu nho) -> tour (tham quan tung khu) -> explore (di lai 3D)
+// ?play trong URL thi vao thang che do kham pha
+const startMode = new URLSearchParams(window.location.search).has("play") ? "explore" : "intro";
+
 export const useGame = create((set, get) => ({
+  mode: startMode,
+  tourStep: 0,
+  tourStops: [],          // [{ key, title, subtitle, description, image, cam, target, ring }] do Intro tao
+  setMode: (mode, tourStep = 0) => {
+    if (mode !== "explore" && document.pointerLockElement) document.exitPointerLock();
+    set({ mode, tourStep, menuOpen: false, mapOpen: false, adminOpen: false, infoOpen: false });
+  },
+  setTourStep: (tourStep) => set({ tourStep }),
+  setTourStops: (tourStops) => set({ tourStops }),
+
   spawn: null,            // [x, y, z] diem xuat phat
   buildings: [],          // [{ name, box: THREE.Box3, center: [x,y,z] }]
   camBlockers: [],        // mesh toa nha de camera khong xuyen qua

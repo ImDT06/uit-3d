@@ -155,6 +155,7 @@ export default function Menu() {
             <button onClick={() => setTab("pad")}>Tay cầm</button>
             <button onClick={() => { restartTutorial(); close(); }}>Xem lại hướng dẫn</button>
             <button onClick={() => { if (spawn) teleportTo(spawn); close(); }}>Về điểm xuất phát</button>
+            <button onClick={() => useGame.getState().setMode("intro")}>Về trang chủ</button>
           </>
         ) : (
           <>

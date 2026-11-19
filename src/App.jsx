@@ -7,6 +7,7 @@ import Player from "./Player";
 import Hud, { Loading } from "./Hud";
 import Admin from "./Admin";
 import Waypoint from "./Waypoint";
+import { IntroScene, IntroUi } from "./Intro";
 import { useGame } from "./store";
 import { useSettings, HOLD_ACTIONS } from "./settings";
 import { useHotkeys } from "./actions";
@@ -57,6 +58,8 @@ class ModelErrorBoundary extends Component {
 
 export default function App() {
   const debug = useGame((s) => s.physicsDebug);
+  const mode = useGame((s) => s.mode);
+  const explore = mode === "explore";
   const paused = useGame((s) => s.menuOpen || s.mapOpen);
   const binds = useSettings((s) => s.binds);
   const quality = useSettings((s) => s.quality);
@@ -75,6 +78,8 @@ export default function App() {
           dpr={q.dpr}
           camera={{ fov: 55, near: 0.1, far: 3000, position: [0, 30, 40] }}
           onContextMenu={(e) => e.preventDefault()}
+          gl={{ alpha: true }}
+          className={`scene scene-${mode}`}
         >
           {/* che do Tu dong: may chay muot thi tang, giat thi giam chat luong */}
           {quality === "auto" && (
@@ -84,9 +89,10 @@ export default function App() {
               flipflops={3}
             />
           )}
-          <color attach="background" args={["#bfe3ff"]} />
-          <fog attach="fog" args={["#bfe3ff", 150, 650]} />
-          <Sky sunPosition={[120, 80, 60]} />
+          {/* trang chu: nen trong suot (nen CSS phia sau), khong suong mu de thay ca sa ban */}
+          {mode !== "intro" && <color attach="background" args={["#bfe3ff"]} />}
+          {mode !== "intro" && <fog attach="fog" args={["#bfe3ff", 150, 650]} />}
+          {mode !== "intro" && <Sky sunPosition={[120, 80, 60]} />}
           <hemisphereLight args={["#ffffff", "#8a8f7a", 0.8]} />
           <directionalLight
             key={q.mapSize}
@@ -102,15 +108,28 @@ export default function App() {
             shadow-bias={-0.0005}
           />
           <Suspense fallback={null}>
-            <Physics debug={debug} paused={paused}>
-              <Campus />
-              <Player />
-            </Physics>
-            <Waypoint />
+            {explore ? (
+              <>
+                <Physics debug={debug} paused={paused}>
+                  <Campus />
+                  <Player />
+                </Physics>
+                <Waypoint />
+              </>
+            ) : (
+              <IntroScene />
+            )}
           </Suspense>
         </Canvas>
-        <Hud />
-        <Admin />
+        {explore ? (
+          <>
+            <Hud />
+            <Admin />
+            <div className="fade-in" />
+          </>
+        ) : (
+          <IntroUi />
+        )}
         <Loading />
       </KeyboardControls>
     </ModelErrorBoundary>
