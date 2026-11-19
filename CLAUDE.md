@@ -54,8 +54,8 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
 
 - Dựng trong Blender 5.3, file gốc `D:\uit3d\blender\uit_blockout.blend` (không nằm trong repo).
 - Dữ liệu từ OpenStreetMap. Quy ước tên object:
-  - `BLD_*` tòa nhà: `BLD_A`, `BLD_B`, `BLD_C`, `BLD_D`, `BLD_E`, `BLD_CanTin`, `BLD_CanTin2`,
-    `BLD_ChotBaoVe`, `BLD_X2` (chưa rõ)
+  - `BLD_*` tòa nhà: `BLD_A`, `BLD_B`, `BLD_C`, `BLD_D`, `BLD_E`, `BLD_CanTin` (= "Nhà dịch vụ", căn tin bán cơm),
+    `BLD_CanTin2`, `BLD_ChotBaoVe`, `BLD_X2` (chưa rõ)
   - `DET_<tòa>_trim` / `DET_<tòa>_glass`: gờ sàn, lan can, cửa sổ (con của `BLD_*`, tạo bởi `uit_detail.py`)
   - `TREE_*` cây (collection Deco). Trên web cây không dùng va chạm trimesh, mỗi cây một CylinderCollider.
   - `GND_*` mặt đất, sân, cỏ; `PATH_*` lối đi; `REF_*` ảnh tham chiếu (không xuất ra web)
@@ -95,5 +95,6 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
 3. Nội dung `src/data/zones.js`: mô tả cho E, D, căn tin 2, chốt bảo vệ, X2 (X2 chưa rõ là gì), ảnh ở `public/images/`.
    Thẻ tham quan lấy nội dung từ đây.
 4. Minigame theo khu vực (quiz thư viện, căn tin...), easter egg.
-5. Chi tiết từng tòa theo ảnh tự chụp (để ở `D:\uit3d\reference\<tòa>\`): C, B, căn tin, cổng sau, sân bóng;
+5. Ảnh tham khảo đã có ở `D:/uit3d/reference/` (chụp màn hình tour 360, có bản quyền, chỉ làm mẫu; ghi chú
+   trong `NGUON.md`). Chi tiết từng tòa theo ảnh (để ở `D:\uit3d\reference\<tòa>\`): C, B, căn tin, cổng sau, sân bóng;
    xác nhận vị trí cổng chính (`GATE`). Chưa làm tới khi có ảnh.

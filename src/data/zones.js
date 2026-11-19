@@ -5,27 +5,35 @@ export const ZONES = {
   BLD_A: {
     title: "Tòa A",
     subtitle: "Thư viện · Hành chính",
-    description: "Tòa nhà 3 tầng, nơi có thư viện trường.",
+    description: "Tòa nhà 3 tầng với hai mái vòm xanh ngọc, nơi có thư viện và Data Center của trường.",
     image: null,
   },
   BLD_B: {
     title: "Tòa B",
-    subtitle: "Tòa vòng cung",
-    description: "Tòa nhà hình vòng cung, biểu tượng của UIT.",
+    subtitle: "Phòng học · Phòng máy",
+    description:
+      "Tòa nhà nhiều tầng hình vòng cung, tường trắng với các dải kính xanh chạy dọc thân. Có phòng học, phòng học lớn và phòng máy chất lượng cao.",
     image: null,
   },
   BLD_C: {
     title: "Tòa C",
-    subtitle: "Dãy phòng học",
-    description: "Dãy nhà dài 3 tầng.",
+    subtitle: "Phòng học · Phòng thực hành",
+    description:
+      "Dãy nhà 3 tầng mặt tiền xanh nhìn ra sân bóng, sảnh giữa có bảng tên trường và cột cờ. Có phòng học, phòng học chất lượng cao và phòng thực hành.",
     image: null,
   },
   BLD_D: { title: "Tòa D", subtitle: "", description: "", image: null },
-  BLD_E: { title: "Tòa E", subtitle: "", description: "", image: null },
+  BLD_E: {
+    title: "Tòa E",
+    subtitle: "Các khoa · Hội trường",
+    description:
+      "Tòa cao tầng mặt kính xanh, bảng tên trường trên nóc, cầu thang xoắn bên hông. Tầng 5–9 là các khoa: Khoa học Máy tính (tầng 5, có MMLab), Kỹ thuật Máy tính, Công nghệ Phần mềm, Mạng máy tính và Truyền thông, Hệ thống Thông tin. Tòa có hội trường.",
+    image: null,
+  },
   BLD_CanTin: {
-    title: "Căn tin",
-    subtitle: "Ăn uống",
-    description: "Căn tin chính của trường.",
+    title: "Nhà dịch vụ",
+    subtitle: "Căn tin · Ăn uống",
+    description: "Tòa 2 tầng mặt tiền cong, nhiều cửa kính. Sinh viên quen gọi là căn tin, nơi bán cơm.",
     image: null,
   },
   BLD_CanTin2: { title: "Căn tin 2", subtitle: "Ăn uống", description: "", image: null },
