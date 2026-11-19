@@ -21,7 +21,9 @@ export default function BuildingPreview({ name }) {
   const box = useMemo(() => (target ? new THREE.Box3().setFromObject(target) : null), [target]);
 
   useLayoutEffect(() => {
-    scene.children.forEach((o) => (o.visible = o === target));
+    // toa + object phu cung ten (vd PLAZA_B la san bac cua B)
+    const tag = "_" + name.slice(4);
+    scene.children.forEach((o) => (o.visible = o === target || o.name.endsWith(tag)));
     if (!box) return;
     // dat camera cheo phia truoc-phai, nhin bao tron toa
     const c = box.getCenter(new THREE.Vector3());

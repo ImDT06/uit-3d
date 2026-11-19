@@ -69,10 +69,17 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
     `CAMPUS_CENTER` trong `src/world/Sun.jsx` là tâm khung này.
   - Dự kiến: `COL_*` collider riêng
 - Chiều cao: số tầng x 3.5 m + 1 m. A, C: 3 tầng; D: 1; E: 12 (theo OSM, chưa xác nhận);
-  B: dựng lại thành vòng cung sạch (bảng `ARC` trong `uit_detail.py`: tâm, bán kính, góc, số tầng từng cấp
-  5/7/9 từ đầu đông sang đầu tây). Mặt trong theo ảnh "Sảnh nhà B": mảng tường trắng nhô ra có dải kính xanh
-  viền xanh dương + chân xanh lá, xen hành lang lõm có sàn và lan can. Mảng tường nằm trong mesh `BLD_B`
-  (có va chạm). Mặt bằng OSM gốc giữ ở `BLD_B_goc`. `TIERS` (cắt tầng theo trục X) dùng được cho tòa khác;
+  B: vòng cung sạch (bảng `ARC` trong `uit_detail.py`: tâm, bán kính, góc, `segments`). Theo ảnh Google Maps
+  (chủ dự án xác nhận 6 mái cao 4-5-6-7-8-9 tầng từ đầu đông sang đầu tây). Tường xanh da trời nhạt.
+  Từ tây sang đông: khối 9 nhô | lõm 8 | trụ 8 nhô | khối 7 nhô | lõm 6 (cột chữ "B") | trụ 6 nhô (dải kính) |
+  khối 5 nhô | lõm nửa 5 + nửa 4 (chung 1 cột) | khối 4 nhô. Mặt nhô: chân xanh lá, dải kính xanh viền xanh dương, vài cột cặp ô vuông nhỏ,
+  khối 7 có cột cửa sổ mái che lá sách, còn lại tường trơn (vị trí theo tỉ lệ trong `segments`).
+  Phần lõm sâu `recess`: ban công hành lang chồng tầng, cột giữa, cầu thang tối ở chân.
+  Giàn lam xanh dương + bồn nước inox trên mái theo từng đoạn.
+  Tường hồi hai đầu (đầu tây hướng về C): cột cửa sổ có mái che, lỗ thông gió, rãnh dọc.
+  Sân giữa: bậc ngồi vòng cung thấp dần về vòng tròn ở tâm = object `PLAZA_B` (collection Props, va chạm
+  trimesh nên đi lên bậc được). Khối tháp nằm trong mesh `BLD_B` (có va chạm). Mặt bằng OSM gốc giữ ở
+  `BLD_B_goc`. `TIERS` (cắt tầng theo trục X) dùng được cho tòa khác;
   căn tin, chốt bảo vệ, X2: 1.
 - C (theo ảnh "Sân bóng"): 3 tầng, tường xanh nhạt, khung lam trắng chia ô (`STYLE["BLD_C"]["fins"]` = bề ngang ô).
   Khối sảnh mặt nam hướng sân bóng (`porch`, không va chạm, đi vào dưới được): cột tầng trệt, hàng tam giác
@@ -81,7 +88,11 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
 - Script dựng mô hình ở `tools/blender/` (import → cleanup → fix → detail → gameplay → export).
 - Chi tiết tòa nhà + trồng cây + cổng chính: script `uit_detail.py` (chạy lại được, tự xóa chi tiết cũ).
   Kiểu riêng từng tòa trong bảng `STYLE` (A: tường trắng, mái cam, 2 vòm xanh ngọc; E: kính xanh liền,
-  bảng tên trên mái). Cổng chính (`GATE_*`, collection Props) chỉnh vị trí qua biến `GATE`.
+  bảng tên trên mái; căn tin: mái tôn xanh dương qua `roofs` kiểu `fit`). Cổng chính (`GATE_*`, collection
+  Props) chỉnh vị trí qua biến `GATE` (chủ dự án xác nhận vị trí hiện tại là đúng; ô đỏ "cổng hiện tại (sai)"
+  trên `ban-do-luoi.png` thực ra đúng).
+  Cổng sau `GATE_back` (biến `BACK_GATE`): trên nhánh đường từ ngã ba nam bốt bảo vệ ra đường ven xa lộ,
+  có trụ, hàng rào, cánh cổng trượt, bốt bảo vệ nhỏ.
   Ảnh flycam (Kỷ yếu Sài Gòn) chỉ dùng làm mẫu dựng, không đưa lên web.
 - Va chạm trên web: tòa nhà là khối đặc (mỗi tam giác mặt đáy dựng thành lăng trụ, `ConvexHullCollider`),
   không dùng trimesh vì tường mỏng làm nhân vật lọt vào trong. Mặt đất, lối đi, `GATE_*` vẫn dùng trimesh.
@@ -110,5 +121,6 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
    Thẻ tham quan lấy nội dung từ đây.
 4. Minigame theo khu vực (quiz thư viện, căn tin...), easter egg.
 5. Ảnh tham khảo đã có ở `D:/uit3d/reference/` (chụp màn hình tour 360, có bản quyền, chỉ làm mẫu; ghi chú
-   trong `NGUON.md`). Chi tiết từng tòa theo ảnh (để ở `D:\uit3d\reference\<tòa>\`): C, B, căn tin, cổng sau, sân bóng;
-   xác nhận vị trí cổng chính (`GATE`). Chưa làm tới khi có ảnh.
+   trong `NGUON.md`). Đã dựng theo ảnh: C, B, căn tin (mái), cổng sau. Còn: nhà ăn (tòa tròn viền xanh),
+   chi tiết cổng chính, A, E (ảnh `E/nha-gui-xe-E-cau-thang-xoan.png`: khối bên phải là cầu thang bộ xoắn
+   ốc ngoài trời), mặt ngoài phía bắc B (chưa có ảnh).
