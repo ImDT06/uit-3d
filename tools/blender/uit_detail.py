@@ -78,6 +78,8 @@ COLORS = {
     "c_glass": (0.17, 0.25, 0.31, 1),
     "c_brick": (0.70, 0.32, 0.22, 1),   # C: nen gach do sau hoa van sanh
     "c_text":  (0.82, 0.12, 0.14, 1),   # C: chu do ten truong
+    "c_roof":  (0.68, 0.78, 0.70, 1),   # C: mai ton xanh nhat
+    "c_court": (0.27, 0.42, 0.24, 1),   # C: san trong (cay)
     "pole":    (0.78, 0.79, 0.80, 1),
     "flag":    (0.86, 0.10, 0.10, 1),
     "star":    (1.00, 0.85, 0.10, 1),
@@ -99,7 +101,16 @@ STYLE = {
     # gach do; tang 3 lam dung; diem mai chu do ten truong; cot co truoc sanh.
     "BLD_C": {"wall": "c_wall", "glass": "c_glass", "fins": 3.8,
               "porch": {"at": (47.7, -74.5), "width": 16.0, "depth": 2.6,
-                        "sign": "TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN"}},
+                        "sign": "TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN"},
+              # mai (anh Google Maps): 2 day mai ton xanh nhat song song, san trong hep o giua,
+              # khoi giua mai ngoi cam (4 mai), dau dong mai bang. Toa do the gioi, x0..x1 / y0..y1.
+              "roofs": [
+                  {"kind": "gable", "x": (-24.3, 35.7), "y": (-74.3, -64.0), "h": 2.0, "mat": "c_roof"},
+                  {"kind": "gable", "x": (-24.3, 35.7), "y": (-55.0, -44.8), "h": 2.0, "mat": "c_roof"},
+                  {"kind": "court", "x": (-24.3, 35.7), "y": (-64.0, -55.0)},
+                  {"kind": "gable", "x": (-43.0, -24.3), "y": (-65.9, -53.5), "h": 2.0, "mat": "c_roof"},
+                  {"kind": "hip", "x": (35.7, 59.7), "y": (-74.5, -49.0), "h": 4.5, "mat": "a_roof"},
+              ]},
 }
 FIN_DEPTH = 0.7  # m, vach dung / o vang nho ra khoi tuong (kieu "fins")
 
@@ -635,6 +646,51 @@ def detail_building(obj, coll):
         tris += attach(obj, coll, f"DET_{obj.name[4:]}_sign", sign_mesh(ring, zmax, axis, style["sign"]))
     if pinfo:
         tris += build_porch(obj, coll, porch, pinfo, zmin, zmax)
+    if style.get("roofs"):
+        tris += build_roofs(obj, coll, style["roofs"], zmax)
+    return tris
+
+
+def build_roofs(obj, coll, specs, ztop):
+    """Mai doc dat len mai bang (chi la hinh, khong va cham). gable: 2 mai, hip: 4 mai, court: san trong."""
+    parts = {}
+    o, b = 0.4, ztop + 0.5  # mai nho ra khoi tuong o (m), chan mai cao hon lan can mot chut
+    for sp in specs:
+        x0, x1 = sp["x"]
+        y0, y1 = sp["y"]
+        if sp["kind"] == "court":
+            bm = parts.setdefault("c_court", bmesh.new())
+            vs = [bm.verts.new((x, y, ztop + 0.05)) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))]
+            bm.faces.new(vs)
+            continue
+        x0, x1, y0, y1 = x0 - o, x1 + o, y0 - o, y1 + o
+        bm = parts.setdefault(sp["mat"], bmesh.new())
+        A, B, C, D = (bm.verts.new((x, y, b)) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1)))
+        xm, ym, zr = (x0 + x1) / 2, (y0 + y1) / 2, b + sp["h"]
+        along_x = x1 - x0 >= y1 - y0
+        if sp["kind"] == "hip":
+            e = min(x1 - x0, y1 - y0) / 2
+        else:
+            e = 0.0
+        if along_x:
+            R0, R1 = bm.verts.new((x0 + e, ym, zr)), bm.verts.new((x1 - e, ym, zr))
+            faces = [(A, B, R1, R0), (C, D, R0, R1), (D, A, R0), (B, C, R1)]
+        else:
+            R0, R1 = bm.verts.new((xm, y0 + e, zr)), bm.verts.new((xm, y1 - e, zr))
+            faces = [(B, C, R1, R0), (D, A, R0, R1), (A, B, R0), (C, D, R1)]
+        for f in faces + [(D, C, B, A)]:
+            if len(set(f)) == len(f):
+                bm.faces.new(f)
+    tris = 0
+    for key, bm in parts.items():
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.01)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        name = f"DET_{obj.name[4:]}_roof_{key}" + ("_decal" if key == "c_court" else "")
+        dme = bpy.data.meshes.new(name)
+        bm.to_mesh(dme)
+        bm.free()
+        dme.materials.append(mat(key, 0.7))
+        tris += attach(obj, coll, name, dme)
     return tris
 
 
