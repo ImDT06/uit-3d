@@ -70,6 +70,10 @@ COLORS = {
     "asphalt": (0.30, 0.30, 0.32, 1),
     "b_wall":  (0.94, 0.95, 0.97, 1),   # B: tuong trang
     "b_glass": (0.22, 0.55, 0.60, 1),   # B: kinh xanh ngoc
+    "b_frame": (0.10, 0.33, 0.72, 1),   # B: vien xanh duong quanh dai kinh
+    "b_base":  (0.30, 0.62, 0.22, 1),   # B: chan tuong xanh la
+    "rail":    (0.42, 0.45, 0.50, 1),   # lan can sat
+    "dark":    (0.10, 0.13, 0.17, 1),   # cua so / cua ra vao toi
 }
 
 # Kieu rieng tung toa. Khong co trong bang -> kieu mac dinh (tuong kem, cua so o vuong).
@@ -88,8 +92,21 @@ STYLE = {
 #   floors: so tang tung doan tu tay sang dong; cuts: vi tri cat theo ti le be ngang (0..1).
 #   Ban goc cua toa luu o mesh "<ten>_goc" (fake user) nen chay lai / doi so tang thoai mai.
 # B: theo anh flycam + tour 360, dau tay cao 9 tang, giua 7, dau dong 5 (vi tri cat uoc luong).
-TIERS = {
-    "BLD_B": {"floors": [9, 7, 5], "cuts": [1 / 3, 2 / 3]},
+TIERS = {}
+
+# Toa hinh vong cung dung lai hoan toan (mat bang OSM qua tho, lom lom loi khi cat tang).
+# Goc tinh bang do, 0 = huong dong (+X Blender), tang nguoc chieu kim dong ho; a0 -> a1 di qua phia bac.
+# floors: so tang tung cap tu a0 (dau dong) sang a1 (dau tay), chia deu theo goc.
+# Mat trong (huong vao san): xen ke "manh tuong" trang nho ra (dai kinh xanh doc, vien xanh duong,
+# chan xanh la) va "hanh lang" lom vao co san tung tang + lan can. Theo anh tour 360 "Sanh nha B".
+ARC = {
+    "BLD_B": {
+        "center": (90.0, -12.0), "r_in": 20.0, "r_out": 42.0, "a0": -8.0, "a1": 188.0,
+        "floors": [5, 7, 9],
+        "blade_w": 5.5,      # m, be ngang manh tuong
+        "recess": 2.2,       # m, hanh lang lom vao so voi mat manh tuong
+        "blades_per_tier": 1,  # so manh tuong giua moi cap (chua tinh manh o ranh gioi / hai dau)
+    },
 }
 
 # Cong chinh: pos = giua cong (x, y), dir = huong di vao truong, width = be rong duong vao.
@@ -277,7 +294,195 @@ def on_segment(m, a, b, tol=0.05):
     return -0.01 <= t <= 1.01 and (a + ab * t - m).length < tol
 
 
+def arc_ring(c, r1, r2, a0, a1, seg):
+    """Da giac vanh khan (nguoc chieu kim dong ho): cung ngoai a0->a1 roi cung trong a1->a0."""
+    angs = [math.radians(a0 + (a1 - a0) * i / seg) for i in range(seg + 1)]
+    outer = [Vector((c.x + r2 * math.cos(a), c.y + r2 * math.sin(a))) for a in angs]
+    inner = [Vector((c.x + r1 * math.cos(a), c.y + r1 * math.sin(a))) for a in reversed(angs)]
+    return outer + inner
+
+
+def prism(bm, ring, z0, z1, mi=0, inv=None):
+    """Lang tru dung tu da giac 2D (CCW). mi: chi so vat lieu; inv: doi toa do the gioi -> object."""
+    T = (lambda v: inv @ v) if inv else (lambda v: v)
+    vb = [bm.verts.new(T(Vector((q.x, q.y, z0)))) for q in ring]
+    vt = [bm.verts.new(T(Vector((q.x, q.y, z1)))) for q in ring]
+    fs = [bm.faces.new(vb[::-1]), bm.faces.new(vt)]
+    n = len(ring)
+    for j in range(n):
+        fs.append(bm.faces.new((vb[j], vb[(j + 1) % n], vt[(j + 1) % n], vt[j])))
+    for f in fs:
+        f.material_index = mi
+    fs[1].material_index = mi if mi else 1  # mat tren: mai (than toa) hoac cung vat lieu (chi tiet)
+    return fs
+
+
+def arc_building(obj, coll):
+    cfg = ARC[obj.name]
+    if not bpy.data.meshes.get(obj.name + "_goc"):
+        keep = obj.data.copy()
+        keep.name = obj.name + "_goc"
+        keep.use_fake_user = True  # giu mat bang OSM goc de tham chieu
+    c = Vector(cfg["center"])
+    r_in, r_out, rec = cfg["r_in"], cfg["r_out"], cfg["recess"]
+    a0, a1, tiers = cfg["a0"], cfg["a1"], cfg["floors"]
+    mw = obj.matrix_world
+    inv = mw.inverted()
+    zmin = min((mw @ v.co).z for v in obj.data.vertices)
+    H = lambda f: f * FLOOR_HEIGHT + 1.0
+    span = (a1 - a0) / len(tiers)
+    bounds = [a0 + span * i for i in range(len(tiers) + 1)]
+    deg = lambda m, r: math.degrees(m / r)  # do dai cung -> goc
+
+    # vi tri manh tuong: hai dau, ranh gioi cac cap, va deu ben trong moi cap
+    bw = deg(cfg["blade_w"], r_in)
+    centers = set()
+    for i in range(len(tiers)):
+        k = cfg["blades_per_tier"]
+        for j in range(1, k + 1):
+            centers.add(round(bounds[i] + span * j / (k + 1), 3))
+    for b in bounds:
+        centers.add(round(min(max(b, a0 + bw / 2), a1 - bw / 2), 3))
+    centers = sorted(centers)
+    tier_of = lambda a: min(int((a - a0) / span), len(tiers) - 1)
+
+    # --- than toa (co va cham tren web): cac cap + manh tuong
+    bm = bmesh.new()
+    for i, f in enumerate(tiers):
+        prism(bm, arc_ring(c, r_in + rec, r_out, bounds[i], bounds[i + 1], max(4, int(span / 5))), zmin, zmin + H(f), 0, inv)
+    blade_h = {}
+    for a in centers:
+        lo, hi = a - bw / 2, a + bw / 2
+        f = max(tiers[tier_of(lo + 1e-3)], tiers[tier_of(hi - 1e-3)])
+        blade_h[a] = zmin + H(f) + 1.2  # manh tuong nho len khoi mai
+        prism(bm, arc_ring(c, r_in, r_in + rec + 0.02, lo, hi, 3), zmin, blade_h[a], 0, inv)
+    bm.normal_update()
+    bm.to_mesh(obj.data)
+    bm.free()
+    obj.data.update()
+    style = STYLE.get(obj.name, {})
+    me = obj.data
+    me.materials.clear()
+    me.materials.append(mat(style.get("wall", "wall"), 0.9))
+    me.materials.append(mat(style.get("roof", "roof"), 0.95))
+
+    # --- chi tiet: moi vat lieu mot bmesh
+    parts = {}
+    def B(key):
+        if key not in parts:
+            parts[key] = bmesh.new()
+        return parts[key]
+
+    radial = lambda a, r: Vector((c.x + r * math.cos(math.radians(a)), c.y + r * math.sin(math.radians(a))))
+    def chord_quad(key, a, r, half_w, z0, z1):
+        """Tam phang dung tiep tuyen voi cung tai goc a, ban kinh r, quay vao tam (mat trong)."""
+        rad = math.radians(a)
+        t = Vector((-math.sin(rad), math.cos(rad)))
+        p = radial(a, r)
+        # add_quad: phap tuyen huong ra = vao tam vong cung
+        add_quad(B(key), p + t * half_w, p - t * half_w, Vector((-math.cos(rad), -math.sin(rad))), z0, z1, 0.0)
+
+    for a in centers:
+        top = blade_h[a]
+        # dai kinh doc giua manh tuong + vien xanh duong
+        prism(B("b_frame"), arc_ring(c, r_in - 0.12, r_in + 0.01, a - deg(1.3, r_in), a + deg(1.3, r_in), 2), zmin + 0.8, top - 1.6, 0)
+        chord_quad("b_glass", a, r_in - 0.14, 0.9, zmin + 1.0, top - 1.8)
+        # chan tuong xanh la
+        prism(B("b_base"), arc_ring(c, r_in - 0.06, r_in + rec + 0.1, a - bw / 2 - 0.05, a + bw / 2 + 0.05, 3), zmin, zmin + 3.0, 0)
+        # cua so vuong nho: hai cot ben canh dai kinh
+        floors_here = int((top - zmin - 2.2) // FLOOR_HEIGHT)
+        half = cfg["blade_w"] / 2
+        for off in (min(1.75, half - 0.9), min(2.35, half - 0.35)):  # hai cot, luon nam trong manh tuong
+            aw = a + deg(off, r_in)
+            for k in range(1, floors_here):
+                z = zmin + k * FLOOR_HEIGHT + 1.4
+                chord_quad("dark", aw, r_in - 0.03, 0.32, z, z + 0.62)
+        # lan can tren dinh manh tuong
+        prism(B("rail"), arc_ring(c, r_in, r_in + 0.08, a - bw / 2, a + bw / 2, 3), top, top + 0.9, 0)
+
+    # hanh lang giua cac manh tuong: san tung tang, lan can, cua phia trong
+    edges = [a0] + [x for a in centers for x in (a - bw / 2, a + bw / 2)] + [a1]
+    # edges = [a0, mep trai manh 0, mep phai manh 0, mep trai manh 1, ..., a1] -> hanh lang = (cap chan, cap le)
+    for g0, g1 in zip(edges[0::2], edges[1::2]):
+        if g1 - g0 < 0.5:
+            continue
+        f = tiers[tier_of((g0 + g1) / 2)]
+        fh = FLOOR_HEIGHT
+        for k in range(1, f + 1):
+            z = zmin + k * fh + (1.0 if k == f else 0)
+            prism(B("trim"), arc_ring(c, r_in + 0.2, r_in + rec + 0.01, g0, g1, 3), z - 0.3, z, 0)
+            prism(B("rail"), arc_ring(c, r_in + 0.2, r_in + 0.28, g0, g1, 3), z, z + 1.0, 0)
+        for k in range(f):
+            z = zmin + k * fh
+            mid = (g0 + g1) / 2
+            for da in (-0.25, 0.25):
+                chord_quad("dark", mid + (g1 - g0) * da, r_in + rec - 0.03, 0.8, z + 0.3, z + 2.6)
+        prism(B("b_base"), arc_ring(c, r_in + rec - 0.06, r_in + rec + 0.05, g0, g1, 3), zmin, zmin + 0.8, 0)
+
+    # mat ngoai: cua so theo tang, lan can mai quanh tung cap
+    for i, f in enumerate(tiers):
+        top = zmin + H(f)
+        seg = max(4, int(span / 5))
+        ring = arc_ring(c, r_in + rec, r_out, bounds[i], bounds[i + 1], seg)
+        outer = ring[: seg + 1]
+        for j in range(seg):
+            p0, p1 = outer[j], outer[j + 1]
+            e = p1 - p0
+            L = e.length
+            t = e / L
+            n = Vector((t.y, -t.x))
+            cnt = int((L - 0.8 + WINDOW_GAP) // (WINDOW_W + WINDOW_GAP))
+            st = (L - (cnt * WINDOW_W + (cnt - 1) * WINDOW_GAP)) / 2
+            for k in range(f):
+                z0 = zmin + k * FLOOR_HEIGHT + WINDOW_BOTTOM
+                for w in range(cnt):
+                    sx = st + w * (WINDOW_W + WINDOW_GAP)
+                    add_quad(B("dark"), p0 + t * sx, p0 + t * (sx + WINDOW_W), n, z0, z0 + WINDOW_H, 0.04)
+            prism(B("b_base"), [p0 + n * 0.06 - t * 0.05, p1 + n * 0.06 + t * 0.05, p1 - n * 0.02 + t * 0.05, p0 - n * 0.02 - t * 0.05], zmin, zmin + 0.8, 0)
+        prism(B("rail"), arc_ring(c, r_out - 0.1, r_out, bounds[i], bounds[i + 1], seg), top, top + 1.0, 0)
+        prism(B("rail"), arc_ring(c, r_in + rec, r_in + rec + 0.1, bounds[i], bounds[i + 1], seg), top, top + 1.0, 0)
+        # tuong dau hoi (hai dau vong cung) + phan khoi cao lo ra tren mai khoi ben canh: cua so theo tang
+        for b, nb, sgn in ((bounds[i], tiers[i - 1] if i > 0 else 0, -1), (bounds[i + 1], tiers[i + 1] if i + 1 < len(tiers) else 0, 1)):
+            if f <= nb:
+                continue
+            rad = math.radians(b)
+            n = Vector((-math.sin(rad), math.cos(rad))) * sgn  # huong ra khoi cap nay
+            p0, p1 = radial(b, r_in + rec), radial(b, r_out)
+            e = p1 - p0
+            L = e.length
+            t = e / L
+            cnt = int((L - 0.8 + WINDOW_GAP) // (WINDOW_W + WINDOW_GAP))
+            st = (L - (cnt * WINDOW_W + (cnt - 1) * WINDOW_GAP)) / 2
+            for k in range(nb, f):
+                z0 = zmin + k * FLOOR_HEIGHT + WINDOW_BOTTOM
+                for w in range(cnt):
+                    sx = st + w * (WINDOW_W + WINDOW_GAP)
+                    add_quad(B("dark"), p0 + t * sx, p0 + t * (sx + WINDOW_W), n, z0, z0 + WINDOW_H, 0.04)
+        # tuong bac cap: phan khoi cao lo ra tren mai khoi thap -> lan can o mep khoi thap
+        for b in (bounds[i], bounds[i + 1]):
+            if a0 < b < a1:
+                p0, p1 = radial(b, r_in + rec), radial(b, r_out)
+                d = (p1 - p0).normalized()
+                n = Vector((d.y, -d.x)) * 0.05
+                prism(B("rail"), [p0 - n, p1 - n, p1 + n, p0 + n], top, top + 1.0, 0)
+
+    tris = 0
+    names = {"b_glass": "glass", "dark": "win_glass"}  # ten ket thuc _glass: web khong cho do bong
+    for key, bmx in parts.items():
+        dme = bpy.data.meshes.new("DET_" + obj.name[4:] + "_" + names.get(key, key))
+        bmx.normal_update()
+        bmx.to_mesh(dme)
+        bmx.free()
+        rough = 0.15 if key in ("b_glass", "dark") else 0.8
+        dme.materials.append(mat(key, rough, 0.3 if key == "b_glass" else 0.0))
+        tris += attach(obj, coll, dme.name, dme)
+    log(f"   {obj.name}: vong cung {len(tiers)} cap {tiers} tang, {len(centers)} manh tuong")
+    return tris
+
+
 def detail_building(obj, coll):
+    if obj.name in ARC:
+        return arc_building(obj, coll)
     apply_tiers(obj)
     parts, zmin = roof_parts(obj)
     if not parts:

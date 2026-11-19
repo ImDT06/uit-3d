@@ -3,7 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { playerPos } from "../game/store";
 
 const SUN = [120, 160, 80]; // huong mat troi: vi tri den so voi diem duoc chieu
-const CAMPUS_CENTER = [60, 0, 5]; // giua GND_Base (toa do three)
+const CAMPUS_CENTER = [25, 0, 15]; // giua GND_Base (toa do three; Blender x -200..250, y -230..200)
 
 // Mat troi + bong do.
 // follow (che do kham pha): vung bong nho quanh nhan vat, di theo nhan vat -> cung kich thuoc shadow map
