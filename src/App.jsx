@@ -7,6 +7,8 @@ import Loading, { PreparingExplore } from "./ui/Loading";
 import FpsMeter, { fpsEnabled } from "./ui/FpsMeter";
 import IntroScene from "./world/IntroScene";
 import IntroUi from "./ui/IntroUi";
+import BuildingPreview, { previewName } from "./world/BuildingPreview";
+import PreviewUi from "./ui/PreviewUi";
 import { useGame } from "./game/store";
 import { useSettings, HOLD_ACTIONS } from "./game/settings";
 import { useHotkeys } from "./game/actions";
@@ -73,7 +75,7 @@ export default function App() {
 
   // o trang chu/tham quan: doi trang yen roi tai ngam phan kham pha
   useEffect(() => {
-    if (explore) return;
+    if (explore || previewName) return;
     const t = setTimeout(() => {
       loadExplore();
       loadExploreUi();
@@ -107,16 +109,18 @@ export default function App() {
             />
           )}
           {/* trang chu: nen trong suot (nen CSS phia sau), khong suong mu de thay ca sa ban */}
-          {mode !== "intro" && <color attach="background" args={["#bfe3ff"]} />}
-          {mode !== "intro" && <fog attach="fog" args={["#bfe3ff", 150, 650]} />}
-          {mode !== "intro" && <Sky sunPosition={[120, 80, 60]} />}
+          {(mode !== "intro" || previewName) && <color attach="background" args={["#bfe3ff"]} />}
+          {mode !== "intro" && !previewName && <fog attach="fog" args={["#bfe3ff", 150, 650]} />}
+          {(mode !== "intro" || previewName) && <Sky sunPosition={[120, 80, 60]} />}
           <hemisphereLight args={["#ffffff", "#8a8f7a", 0.8]} />
           <Sun shadows={q.shadows} mapSize={q.mapSize} follow={explore} />
           <Suspense fallback={null}>
-            {explore ? <Explore /> : <IntroScene />}
+            {previewName ? <BuildingPreview name={previewName} /> : explore ? <Explore /> : <IntroScene />}
           </Suspense>
         </Canvas>
-        {explore ? (
+        {previewName ? (
+          <PreviewUi name={previewName} />
+        ) : explore ? (
           <Suspense fallback={<PreparingExplore />}>
             <ExploreUi />
           </Suspense>

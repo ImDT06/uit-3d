@@ -54,9 +54,11 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
 
 - Dựng trong Blender 5.3, file gốc `D:\uit3d\blender\uit_blockout.blend` (không nằm trong repo).
 - Dữ liệu từ OpenStreetMap. Quy ước tên object:
-  - `BLD_*` tòa nhà: `BLD_A`, `BLD_B`, `BLD_C`, `BLD_D`, `BLD_E`, `BLD_CanTin` (= "Nhà dịch vụ", căn tin bán cơm),
-    `BLD_CanTin2`, `BLD_ChotBaoVe`, `BLD_X2` (chưa rõ)
-  - `DET_<tòa>_trim` / `DET_<tòa>_glass`: gờ sàn, lan can, cửa sổ (con của `BLD_*`, tạo bởi `uit_detail.py`)
+  - `BLD_*` tòa nhà: `BLD_A`, `BLD_B`, `BLD_C`, `BLD_D`, `BLD_E`, `BLD_CanTin` (= "Nhà ăn", tour 360 gọi
+    "Nhà dịch vụ", tòa tròn viền xanh phía đông B, bán cơm), `BLD_CanTin2` (= "Căn tin", mái tôn xanh dương,
+    bán bánh/nước; lối đi qua đây ra cổng sau), `BLD_ChotBaoVe` (gần cổng sau?), `BLD_X2` (chưa rõ)
+  - `DET_<tòa>_trim` / `DET_<tòa>_glass`: gờ sàn, lan can, cửa sổ (con của `BLD_*`, tạo bởi `uit_detail.py`).
+    Tên kết thúc `_glass` hoặc `_decal` (mảng phẳng dán lên tường) thì web không cho đổ bóng.
   - `TREE_*` cây (collection Deco). Trên web cây không dùng va chạm trimesh, mỗi cây một CylinderCollider.
   - `GND_*` mặt đất, sân, cỏ; `PATH_*` lối đi; `REF_*` ảnh tham chiếu (không xuất ra web)
   - `ZONE_<tòa>` (empty hình hộp, collection Gameplay): vùng khu vực, đứng trong hộp = đang ở `BLD_<tòa>`
@@ -71,7 +73,11 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
   5/7/9 từ đầu đông sang đầu tây). Mặt trong theo ảnh "Sảnh nhà B": mảng tường trắng nhô ra có dải kính xanh
   viền xanh dương + chân xanh lá, xen hành lang lõm có sàn và lan can. Mảng tường nằm trong mesh `BLD_B`
   (có va chạm). Mặt bằng OSM gốc giữ ở `BLD_B_goc`. `TIERS` (cắt tầng theo trục X) dùng được cho tòa khác;
-  căn tin 2; căn tin 2, chốt bảo vệ, X2: 1.
+  căn tin, chốt bảo vệ, X2: 1.
+- C (theo ảnh "Sân bóng"): 3 tầng, tường xanh nhạt, khung lam trắng chia ô (`STYLE["BLD_C"]["fins"]` = bề ngang ô).
+  Khối sảnh mặt nam hướng sân bóng (`porch`, không va chạm, đi vào dưới được): cột tầng trệt, hàng tam giác
+  lỗ tròn trên nền gạch đỏ, ban công, lam dọc tầng 3, chữ đỏ tên trường, cột cờ. Mái thật (ảnh Google Maps):
+  2 dãy mái tôn xanh nhạt, sân trong hẹp, khối giữa mái ngói cam; chưa dựng.
 - Script dựng mô hình ở `tools/blender/` (import → cleanup → fix → detail → gameplay → export).
 - Chi tiết tòa nhà + trồng cây + cổng chính: script `uit_detail.py` (chạy lại được, tự xóa chi tiết cũ).
   Kiểu riêng từng tòa trong bảng `STYLE` (A: tường trắng, mái cam, 2 vòm xanh ngọc; E: kính xanh liền,
@@ -86,6 +92,8 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
 
 - `npm install` (lần đầu), `npm run dev` (chạy thử tại http://localhost:5173), `npm run build`
 - Thêm `?debug` vào URL để xem khung va chạm, `?fps` để hiện bộ đếm FPS (đo trên điện thoại thật).
+- `?toa=C` (hoặc `?toa=CanTin`...): xem riêng một tòa, xoay/zoom tự do (`world/BuildingPreview.jsx`, `ui/PreviewUi.jsx`).
+  Quy trình dựng chi tiết: sửa script → dựng lại → gửi ảnh + link `?toa=` cho chủ dự án duyệt → mới commit.
 - Khi chạy dev có `window.__uitPlayer` (ref ecctrl) và `window.__uitR3f` (state R3F) cho script kiểm thử
   (teleport, đẩy vận tốc, đọc `gl.info`); bản build không có.
 - `public/og.jpg`: ảnh xem trước khi gửi link (chụp từ trang chủ, 1200×630). Đổi giao diện trang chủ nhiều thì chụp lại.
@@ -98,7 +106,7 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
    chuyển từ bộ đếm `visited` thành nhiệm vụ.
 2. ~~Sửa lỗi + tối ưu~~ (xong 19/11: va chạm 304 lần thử không lọt, hết vệt bóng, JS lúc mở trang 3,6 → 1,3 MB,
    og:image). Còn: đo FPS trên điện thoại thật bằng `?fps`.
-3. Nội dung `src/data/zones.js`: mô tả cho E, D, căn tin 2, chốt bảo vệ, X2 (X2 chưa rõ là gì), ảnh ở `public/images/`.
+3. Nội dung `src/data/zones.js`: mô tả cho E, D, chốt bảo vệ, X2 (X2 chưa rõ là gì), ảnh ở `public/images/`.
    Thẻ tham quan lấy nội dung từ đây.
 4. Minigame theo khu vực (quiz thư viện, căn tin...), easter egg.
 5. Ảnh tham khảo đã có ở `D:/uit3d/reference/` (chụp màn hình tour 360, có bản quyền, chỉ làm mẫu; ghi chú

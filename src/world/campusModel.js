@@ -19,9 +19,9 @@ export function splitScene(scene) {
   });
   // Bong do: vat lieu trong glb deu 2 mat (doubleSided) nen mat dang duoc chieu sang tu in bong len chinh no
   // (vet lam tam tren tuong). shadowSide = BackSide: chi mat khuat sang ghi vao shadow map.
-  // Mat phang (dat, loi di, kinh) khong do bong: het vet tren mat dat, bot viec cho GPU.
+  // Mat phang (dat, loi di, kinh, mang trang tri dan len tuong *_decal) khong do bong: het vet tren mat dat, bot viec cho GPU.
   const flat = (o) => {
-    for (let p = o; p && p !== scene; p = p.parent) if (/^(GND_|PATH_|GATE_road)|_glass$/.test(p.name)) return true;
+    for (let p = o; p && p !== scene; p = p.parent) if (/^(GND_|PATH_|GATE_road)|_(glass|decal)$/.test(p.name)) return true;
     return false;
   };
   const shadowMat = (m) => [m.material].flat().forEach((mat) => (mat.shadowSide = THREE.BackSide));

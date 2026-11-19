@@ -47,7 +47,7 @@ export default function Sun({ shadows, mapSize, follow }) {
       shadow-camera-near={10}
       shadow-camera-far={500}
       shadow-bias={-0.0002}
-      shadow-normalBias={follow ? 0.03 : 0.12}
+      shadow-normalBias={follow ? 0.03 : 0.3}
     />
   );
 }

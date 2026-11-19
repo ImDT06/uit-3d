@@ -74,6 +74,13 @@ COLORS = {
     "b_base":  (0.30, 0.62, 0.22, 1),   # B: chan tuong xanh la
     "rail":    (0.42, 0.45, 0.50, 1),   # lan can sat
     "dark":    (0.10, 0.13, 0.17, 1),   # cua so / cua ra vao toi
+    "c_wall":  (0.56, 0.78, 0.92, 1),   # C: tuong xanh nhat
+    "c_glass": (0.17, 0.25, 0.31, 1),
+    "c_brick": (0.70, 0.32, 0.22, 1),   # C: nen gach do sau hoa van sanh
+    "c_text":  (0.82, 0.12, 0.14, 1),   # C: chu do ten truong
+    "pole":    (0.78, 0.79, 0.80, 1),
+    "flag":    (0.86, 0.10, 0.10, 1),
+    "star":    (1.00, 0.85, 0.10, 1),
 }
 
 # Kieu rieng tung toa. Khong co trong bang -> kieu mac dinh (tuong kem, cua so o vuong).
@@ -86,7 +93,15 @@ STYLE = {
     "BLD_B": {"wall": "b_wall", "glass": "b_glass"},
     "BLD_E": {"wall": "e_wall", "glass": "e_glass", "curtain": True,
               "sign": "TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN"},
+    # C (theo anh tour 360 "San bong"): 3 tang, tuong xanh nhat, khung lam trang chia o (vach dung + o vang
+    # moi tang), moi o 2 cua so. Khoi sanh giua mat nam (huong san bong), nho cao hon mai: tang tret duoi
+    # de trong co cot + ban cong; phan tren tang tret va tang 2: hang tam giac trang co lo tron tren nen
+    # gach do; tang 3 lam dung; diem mai chu do ten truong; cot co truoc sanh.
+    "BLD_C": {"wall": "c_wall", "glass": "c_glass", "fins": 3.8,
+              "porch": {"at": (47.7, -74.5), "width": 16.0, "depth": 2.6,
+                        "sign": "TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN"}},
 }
+FIN_DEPTH = 0.7  # m, vach dung / o vang nho ra khoi tuong (kieu "fins")
 
 # Toa nhieu cap mai: chia mat bang theo truc X (tay -> dong) thanh cac doan, moi doan mot so tang.
 #   floors: so tang tung doan tu tay sang dong; cuts: vi tri cat theo ti le be ngang (0..1).
@@ -506,6 +521,18 @@ def detail_building(obj, coll):
     for p in me.polygons:
         p.material_index = 1 if p.index in roofs else 0
 
+    fins = style.get("fins")
+    # khoi sanh: tim canh mai chinh gan diem "at" nhat, phan tuong sau sanh khong lam cua so / lam
+    porch, pinfo = style.get("porch"), None
+    if porch:
+        at = Vector(porch["at"])
+        j = min(range(len(ring)), key=lambda j: seg_dist(at, ring[j], ring[(j + 1) % len(ring)]))
+        a = ring[j]
+        tt = (ring[(j + 1) % len(ring)] - a).normalized()
+        s = (at - a).dot(tt)
+        pinfo = {"edge": j, "gap": (s - porch["width"] / 2, s + porch["width"] / 2),
+                 "c": a + tt * s, "t": tt, "n": Vector((tt.y, -tt.x))}
+
     bm_trim, bm_glass = bmesh.new(), bmesh.new()
     for pring, ptop, _, _ in parts:
         height = ptop - zmin
@@ -520,6 +547,8 @@ def detail_building(obj, coll):
                 continue
             t = e / L
             n = Vector((t.y, -t.x))  # phap tuyen huong ra ngoai (vong nguoc chieu kim dong ho)
+            gap = pinfo["gap"] if pinfo and pring is ring and i == pinfo["edge"] else None
+            runs = [(0.0, L)] if not gap else [r for r in ((0.0, gap[0]), (gap[1], L)) if r[1] - r[0] > 0.2]
             # canh tiep giap khoi khac: phan tuong thap hon mai khoi do bi che, chi lam tu do tro len
             mid = (p0 + p1) / 2
             covered = zmin
@@ -531,19 +560,45 @@ def detail_building(obj, coll):
             if covered >= ptop - 0.01:
                 continue  # tuong nay nam han ben trong khoi cao hon
 
-            # go ngang o moi san + lan can mai
-            ext = t * 0.15
+            # go ngang o moi san (kieu fins: o vang sau) + lan can mai
+            use_fins = fins and L >= 3
+            depth = FIN_DEPTH if use_fins else LEDGE_DEPTH
             for k in range(1, floors + 1):
                 z = zmin + k * fh
                 if k == floors:
                     z = ptop
                 if z > covered + 0.3:
-                    add_box(bm_trim, p0 - ext, p1 + ext, n, z - LEDGE_THICK, z, -0.01, LEDGE_DEPTH)
+                    for u0, u1 in runs:
+                        add_box(bm_trim, p0 + t * (u0 - (0.15 if u0 <= 0 else 0)), p0 + t * (u1 + (0.15 if u1 >= L else 0)),
+                                n, z - LEDGE_THICK, z, -0.01, depth)
             add_box(bm_trim, p0, p1, n, ptop, ptop + PARAPET_H, -PARAPET_T, 0.02)
 
             # kinh lien (mat song song truc chinh)
             if curtain and abs(t.dot(axis)) > 0.9 and L > 3:
                 add_quad(bm_glass, p0, p1, n, max(zmin + 0.6, covered), ptop - 0.25, 0.05)
+                continue
+
+            # khung lam: vach dung chia o deu ~fins m, moi o 2 cua so cao gan het tang
+            if use_fins:
+                nb = max(1, round(L / fins))
+                bw = L / nb
+                zf = max(zmin, covered)
+                in_gap = lambda s0, s1: gap and s0 < gap[1] and s1 > gap[0]
+                for j in range(nb + 1):
+                    s = j * bw
+                    if not in_gap(s - 0.15, s + 0.15):
+                        add_box(bm_trim, p0 + t * (s - 0.15), p0 + t * (s + 0.15), n, zf, ptop, -0.01, depth)
+                ww = (bw - 0.3 - 0.7 - 0.25) / 2
+                for j in range(nb):
+                    if ww < 0.5 or in_gap(j * bw, (j + 1) * bw):
+                        continue
+                    for k in range(floors):
+                        z0 = zmin + k * fh + WINDOW_BOTTOM
+                        z1 = zmin + (k + 1) * fh - LEDGE_THICK - 0.25
+                        if z0 < covered:
+                            continue
+                        for s in (j * bw + 0.5, j * bw + 0.5 + ww + 0.25):
+                            add_quad(bm_glass, p0 + t * s, p0 + t * (s + ww), n, z0, z1, 0.04)
                 continue
 
             # cua so
@@ -578,6 +633,148 @@ def detail_building(obj, coll):
         tris += attach(obj, coll, f"DET_{obj.name[4:]}_dome{i}", dome_mesh(x, y, zmax, r))
     if style.get("sign"):
         tris += attach(obj, coll, f"DET_{obj.name[4:]}_sign", sign_mesh(ring, zmax, axis, style["sign"]))
+    if pinfo:
+        tris += build_porch(obj, coll, porch, pinfo, zmin, zmax)
+    return tris
+
+
+def seg_dist(p, a, b):
+    ab = b - a
+    u = max(0.0, min(1.0, (p - a).dot(ab) / max(ab.length_squared, 1e-9)))
+    return (a + ab * u - p).length
+
+
+def build_porch(obj, coll, cfg, pinfo, zmin, ztop):
+    """Khoi sanh nho ra truoc mat tuong (toa C). Khong co va cham: tang tret de trong nen di vao duoi duoc."""
+    c, t, n = pinfo["c"], pinfo["t"], pinfo["n"]
+    W, D = cfg["width"], cfg["depth"]
+    w2 = W / 2
+    floors = max(1, int(round((ztop - zmin - 1.0) / FLOOR_HEIGHT)))
+    fh = (ztop - zmin - 1.0) / floors
+    top = ztop + 1.6           # diem mai sanh cao hon lan can khoi chinh
+    pil = zmin + fh - 1.0      # tang tret: phan duoi de trong (cot), phan tren la dai hoa van
+    parts = {}
+
+    def B(key):
+        if key not in parts:
+            parts[key] = bmesh.new()
+        return parts[key]
+
+    P = lambda s, d: c + t * s + n * d
+
+    def box(key, s0, s1, d0, d1, z0, z1):
+        add_box(B(key), P(s0, 0), P(s1, 0), n, z0, z1, d0, d1)
+
+    def quad(key, s0, s1, d, z0, z1):
+        add_quad(B(key), P(s0, 0), P(s1, 0), n, z0, z1, d)
+
+    def V(bm, s, d, z):
+        p = P(s, d)
+        return bm.verts.new((p.x, p.y, z))
+
+    def vtri(key, s0, s1, d0, d1, zt, za):
+        """Tam giac dung chuc xuong (day tren o zt, dinh o za), day d0..d1."""
+        bm = B(key)
+        sm = (s0 + s1) / 2
+        f = [V(bm, s0, d1, zt), V(bm, sm, d1, za), V(bm, s1, d1, zt)]
+        b = [V(bm, s0, d0, zt), V(bm, sm, d0, za), V(bm, s1, d0, zt)]
+        for vs in (f[::-1], b, (b[0], b[1], f[1], f[0]), (b[1], b[2], f[2], f[1]), (b[2], b[0], f[0], f[2])):
+            bm.faces.new(vs)
+
+    def disc(key, s, d, zc, r, seg=10, rin=None):
+        """Hinh tron (hoac sao neu co rin) dung, quay ra ngoai: quat tam giac tu tam."""
+        bm = B(key)
+        k = seg * (2 if rin else 1)
+        ctr = V(bm, s, d, zc)
+        ring = []
+        for i in range(k):
+            a = math.tau * i / k + math.pi / 2
+            rr = rin if rin and i % 2 else r
+            ring.append(V(bm, s + rr * math.cos(a), d, zc + rr * math.sin(a)))
+        for i in range(k):
+            bm.faces.new((ctr, ring[i], ring[(i + 1) % k]))
+
+    # than sanh (trang): tu dinh tang tret de trong len diem mai, lung tua vao tuong khoi chinh
+    box("trim", -w2, w2, -0.05, D, pil, top)
+    box("trim", -w2 - 0.2, w2 + 0.2, D - 0.1, D + 0.3, top - 0.3, top + 0.4)  # go diem mai
+    # tang tret: hang cot + mang tuong toi (sanh) phia sau, bac tam cap
+    for i in range(6):
+        s = -w2 + 0.45 + (W - 0.9) * i / 5
+        box("trim", s - 0.25, s + 0.25, D - 0.65, D - 0.15, zmin, pil)
+    quad("dark", -w2 + 0.3, w2 - 0.3, 0.03, zmin + 0.25, pil - 0.1)
+    box("footway", -w2 - 0.6, w2 + 0.6, -0.1, D + 1.4, zmin, zmin + 0.25)
+    # dai hoa van: phan tren tang tret va tang 2 -- go san trang, hang tam giac co lo tron, nen gach do
+    for k in range(min(2, floors)):
+        zt = zmin + (k + 1) * fh
+        zlo = pil if k == 0 else zmin + k * fh
+        quad("c_brick", -w2 + 0.3, w2 - 0.3, D + 0.01, zlo + 0.1, zt - 0.3)
+        box("trim", -w2, w2, D - 0.05, D + 0.35, zt - 0.3, zt)
+        tri_h = min(1.4, zt - 0.3 - zlo - 0.1)
+        m = max(3, round((W - 0.6) / 1.45))
+        tw = (W - 0.6) / m
+        for j in range(m):
+            s0 = -w2 + 0.3 + j * tw
+            vtri("trim", s0 + 0.04, s0 + tw - 0.04, D + 0.05, D + 0.2, zt - 0.3, zt - 0.3 - tri_h)
+            disc("dark", s0 + tw / 2, D + 0.21, zt - 0.3 - tri_h * 0.33, min(0.28, tw * 0.22))
+        # vach dung trang chia o gach
+        for j in range(m + 1):
+            s = -w2 + 0.3 + j * tw
+            box("trim", s - 0.08, s + 0.08, D, D + 0.12, zlo, zt - 0.3)
+    # tang tren cung: lam dung trang truoc nen toi
+    for k in range(2, floors):
+        z0 = zmin + k * fh
+        quad("dark", -w2 + 0.3, w2 - 0.3, D + 0.01, z0 + 0.3, ztop - 0.2)
+        cnt = max(2, round(W / 1.6))
+        for j in range(cnt + 1):
+            s = -w2 + 0.3 + (W - 0.6) * j / cnt
+            box("trim", s - 0.12, s + 0.12, D, D + 0.45, z0, ztop)
+    # ban cong giua o san tang 2, hai cot do ben duoi
+    bw2 = min(3.6, w2 - 1)
+    zb = zmin + fh
+    box("trim", -bw2, bw2, D, D + 1.9, zb - 0.3, zb)
+    box("trim", -bw2, bw2, D + 1.75, D + 1.9, zb, zb + 1.0)
+    for s in (-bw2, bw2 - 0.15):
+        box("trim", s, s + 0.15, D, D + 1.9, zb, zb + 1.0)
+    for s in (-bw2 + 0.3, bw2 - 0.3):
+        box("trim", s - 0.2, s + 0.2, D + 1.4, D + 1.8, zmin, zb - 0.3)
+    # chu do ten truong tren diem mai
+    if cfg.get("sign"):
+        tme = font_mesh(cfg["sign"])
+        xs = [v.co.x for v in tme.vertices]
+        ys = [v.co.y for v in tme.vertices]
+        band = top - 0.3 - (ztop - 0.1)
+        k = min((W - 1.0) / (max(xs) - min(xs)), band * 0.75 / (max(ys) - min(ys)))
+        p = P(-(max(xs) + min(xs)) / 2 * k, D + 0.03)
+        ang = math.atan2(n.x, -n.y)  # chu nam XY doc tu -Y -> quay de doc tu phia n
+        M = (Matrix.Translation((p.x, p.y, ztop - 0.1 + band / 2 - (max(ys) + min(ys)) / 2 * k))
+             @ Matrix.Rotation(ang, 4, "Z") @ Matrix.Rotation(math.pi / 2, 4, "X") @ Matrix.Scale(k, 4))
+        bm = B("c_text")
+        vs = [bm.verts.new(M @ v.co) for v in tme.vertices]
+        for poly in tme.polygons:
+            try:
+                bm.faces.new([vs[i] for i in poly.vertices])
+            except ValueError:
+                pass
+        bpy.data.meshes.remove(tme)
+    # cot co truoc sanh (ben trai khi nhin tu san bong), co do sao vang
+    sf, df, hp = -w2 * 0.4, D + 3.2, ztop - 1.3  # dinh co thap hon chu ten truong (theo anh)
+    pp = P(sf, df)
+    bmesh.ops.create_cone(B("pole"), cap_ends=True, segments=8, radius1=0.08, radius2=0.05, depth=hp,
+                          matrix=Matrix.Translation((pp.x, pp.y, zmin + hp / 2)))
+    fz0, fz1, fl = zmin + hp - 1.5, zmin + hp - 0.1, 2.1
+    quad("flag", sf + 0.08, sf + 0.08 + fl, df, fz0, fz1)
+    for d in (df + 0.02, df - 0.02):
+        disc("star", sf + 0.08 + fl / 2, d, (fz0 + fz1) / 2, 0.42, 5, 0.17)
+
+    tris = 0
+    names = {"dark": "porch_win_glass", "c_brick": "porch_brick_decal", "c_text": "porch_text_decal"}
+    for key, bmx in parts.items():
+        dme = bpy.data.meshes.new("DET_" + obj.name[4:] + "_" + names.get(key, "porch_" + key))
+        bmx.normal_update()
+        bmx.to_mesh(dme)
+        bmx.free()
+        dme.materials.append(mat(key, 0.2 if key == "dark" else 0.8))
+        tris += attach(obj, coll, dme.name, dme)
     return tris
 
 
@@ -610,6 +807,22 @@ def dome_mesh(x, y, z, r):
     return me
 
 
+def font_mesh(text):
+    """Chu phang (mat phang XY, can giua, cao ~1) -> mesh tam. Nho xoa sau khi dung."""
+    cu = bpy.data.curves.new("tmp_sign", "FONT")
+    cu.body = text
+    cu.align_x = "CENTER"
+    cu.align_y = "CENTER"
+    cu.size = 1.0
+    tmp = bpy.data.objects.new("tmp_sign", cu)
+    bpy.context.scene.collection.objects.link(tmp)
+    dg = bpy.context.evaluated_depsgraph_get()
+    tme = bpy.data.meshes.new_from_object(tmp.evaluated_get(dg))
+    bpy.data.objects.remove(tmp, do_unlink=True)
+    bpy.data.curves.remove(cu)
+    return tme
+
+
 def sign_mesh(ring, zmax, axis, text):
     """Bang ten tren mai: tam bang trang dat doc theo truc chinh, chu xanh ca hai mat."""
     cx = sum(p.x for p in ring) / len(ring)
@@ -624,18 +837,7 @@ def sign_mesh(ring, zmax, axis, text):
     bmesh.ops.create_cube(bm, size=1.0, matrix=M @ Matrix.Diagonal((length, T, H, 1)))
     for f in bm.faces:
         f.material_index = 0
-    # chu: dung text object cua Blender roi chuyen thanh mesh
-    cu = bpy.data.curves.new("tmp_sign", "FONT")
-    cu.body = text
-    cu.align_x = "CENTER"
-    cu.align_y = "CENTER"
-    cu.size = 1.0
-    tmp = bpy.data.objects.new("tmp_sign", cu)
-    bpy.context.scene.collection.objects.link(tmp)
-    dg = bpy.context.evaluated_depsgraph_get()
-    tme = bpy.data.meshes.new_from_object(tmp.evaluated_get(dg))
-    bpy.data.objects.remove(tmp, do_unlink=True)
-    bpy.data.curves.remove(cu)
+    tme = font_mesh(text)
     xs = [v.co.x for v in tme.vertices]
     ys = [v.co.y for v in tme.vertices]
     k = min(length * 0.92 / (max(xs) - min(xs)), H * 0.6 / (max(ys) - min(ys)))

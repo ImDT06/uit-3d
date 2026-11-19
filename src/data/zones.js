@@ -31,12 +31,17 @@ export const ZONES = {
     image: null,
   },
   BLD_CanTin: {
-    title: "Nhà dịch vụ",
-    subtitle: "Căn tin · Ăn uống",
-    description: "Tòa 2 tầng mặt tiền cong, nhiều cửa kính. Sinh viên quen gọi là căn tin, nơi bán cơm.",
+    title: "Nhà ăn",
+    subtitle: "Nhà dịch vụ · Cơm trưa",
+    description: "Tòa 2 tầng mặt tiền cong, viền xanh, nhiều cửa kính. Nơi sinh viên ăn cơm.",
     image: null,
   },
-  BLD_CanTin2: { title: "Căn tin 2", subtitle: "Ăn uống", description: "", image: null },
+  BLD_CanTin2: {
+    title: "Căn tin",
+    subtitle: "Bánh · Nước",
+    description: "Dãy nhà mái tôn xanh nổi bật, bán bánh, nước và đồ ăn vặt. Đi qua đây là ra cổng sau.",
+    image: null,
+  },
   BLD_ChotBaoVe: { title: "Chốt bảo vệ", subtitle: "", description: "", image: null },
 };
 
