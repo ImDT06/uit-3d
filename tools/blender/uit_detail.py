@@ -68,6 +68,8 @@ COLORS = {
     "planter": (0.82, 0.80, 0.74, 1),
     "bush":    (0.25, 0.55, 0.22, 1),
     "asphalt": (0.30, 0.30, 0.32, 1),
+    "b_wall":  (0.94, 0.95, 0.97, 1),   # B: tuong trang
+    "b_glass": (0.22, 0.55, 0.60, 1),   # B: kinh xanh ngoc
 }
 
 # Kieu rieng tung toa. Khong co trong bang -> kieu mac dinh (tuong kem, cua so o vuong).
@@ -77,8 +79,17 @@ COLORS = {
 STYLE = {
     "BLD_A": {"wall": "a_wall", "roof": "a_roof", "trim": "a_trim", "glass": "a_glass",
               "domes": [(1.8, 73.0, 7.0), (-10.0, 26.0, 11.0)]},
+    "BLD_B": {"wall": "b_wall", "glass": "b_glass"},
     "BLD_E": {"wall": "e_wall", "glass": "e_glass", "curtain": True,
               "sign": "TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN"},
+}
+
+# Toa nhieu cap mai: chia mat bang theo truc X (tay -> dong) thanh cac doan, moi doan mot so tang.
+#   floors: so tang tung doan tu tay sang dong; cuts: vi tri cat theo ti le be ngang (0..1).
+#   Ban goc cua toa luu o mesh "<ten>_goc" (fake user) nen chay lai / doi so tang thoai mai.
+# B: theo anh flycam + tour 360, dau tay cao 9 tang, giua 7, dau dong 5 (vi tri cat uoc luong).
+TIERS = {
+    "BLD_B": {"floors": [9, 7, 5], "cuts": [1 / 3, 2 / 3]},
 }
 
 # Cong chinh: pos = giua cong (x, y), dir = huong di vao truong, width = be rong duong vao.
@@ -180,14 +191,99 @@ def clear_old():
             bpy.data.meshes.remove(me)
 
 
+def clip_x(ring, lo, hi):
+    """Cat da giac (Sutherland-Hodgman) giu phan lo <= x <= hi."""
+    def clip(pts, inside, cross):
+        out = []
+        for i in range(len(pts)):
+            a, b = pts[i - 1], pts[i]
+            ia, ib = inside(a), inside(b)
+            if ib:
+                if not ia:
+                    out.append(cross(a, b))
+                out.append(b)
+            elif ia:
+                out.append(cross(a, b))
+        return out
+
+    def at_x(x):
+        return lambda a, b: a.lerp(b, (x - a.x) / (b.x - a.x))
+
+    pts = clip(ring, lambda v: v.x >= lo, at_x(lo))
+    return clip(pts, lambda v: v.x <= hi, at_x(hi)) if pts else []
+
+
+def apply_tiers(obj):
+    """Dung lai khoi toa thanh nhieu khoi cao thap khac nhau theo TIERS (tu ban goc)."""
+    cfg = TIERS.get(obj.name)
+    if not cfg:
+        return
+    orig = bpy.data.meshes.get(obj.name + "_goc")
+    if orig is None:
+        orig = obj.data.copy()
+        orig.name = obj.name + "_goc"
+        orig.use_fake_user = True
+    mw = obj.matrix_world
+    zmin = min((mw @ v.co).z for v in orig.vertices)
+    bottom = max((p for p in orig.polygons if p.normal.z < -0.9), key=lambda p: p.area)
+    ring = [(mw @ orig.vertices[i].co).to_2d() for i in bottom.vertices]
+    area = sum(ring[i - 1].x * ring[i].y - ring[i].x * ring[i - 1].y for i in range(len(ring)))
+    if area < 0:
+        ring.reverse()  # nguoc chieu kim dong ho -> mat tren huong len
+    x0, x1 = min(p.x for p in ring), max(p.x for p in ring)
+    xs = [x0 - 1] + [x0 + (x1 - x0) * c for c in cfg["cuts"]] + [x1 + 1]
+    inv = mw.inverted()
+    bm = bmesh.new()
+    for i, floors in enumerate(cfg["floors"]):
+        poly = clip_x(ring, xs[i], xs[i + 1])
+        if len(poly) < 3:
+            continue
+        z1 = zmin + floors * FLOOR_HEIGHT + 1.0
+        vb = [bm.verts.new(inv @ Vector((q.x, q.y, zmin))) for q in poly]
+        vt = [bm.verts.new(inv @ Vector((q.x, q.y, z1))) for q in poly]
+        bm.faces.new(vb[::-1])
+        bm.faces.new(vt)
+        for j in range(len(poly)):
+            bm.faces.new((vb[j], vb[(j + 1) % len(poly)], vt[(j + 1) % len(poly)], vt[j]))
+    bm.normal_update()
+    bm.to_mesh(obj.data)
+    bm.free()
+    obj.data.update()
+    log(f"   {obj.name}: {len(cfg['floors'])} cap mai {cfg['floors']} tang")
+
+
+def roof_parts(obj):
+    """Cac mat mai (huong len, cao hon day) -> [(ring CCW the gioi 2D, z mai, chi so mat, dien tich)]."""
+    me = obj.data
+    mw = obj.matrix_world
+    zmin = min((mw @ v.co).z for v in me.vertices)
+    parts = []
+    for p in me.polygons:
+        if p.normal.z > 0.9 and (mw @ p.center).z > zmin + 1.0:
+            ring = [(mw @ me.vertices[i].co).to_2d() for i in p.vertices]
+            area = sum(ring[i - 1].x * ring[i].y - ring[i].x * ring[i - 1].y for i in range(len(ring)))
+            if area < 0:
+                ring.reverse()
+            parts.append((ring, (mw @ p.center).z, p.index, abs(area) / 2))
+    return parts, zmin
+
+
+def on_segment(m, a, b, tol=0.05):
+    ab = b - a
+    L2 = ab.length_squared
+    if L2 < 1e-9:
+        return False
+    t = (m - a).dot(ab) / L2
+    return -0.01 <= t <= 1.01 and (a + ab * t - m).length < tol
+
+
 def detail_building(obj, coll):
-    fp = footprint(obj)
-    if not fp:
+    apply_tiers(obj)
+    parts, zmin = roof_parts(obj)
+    if not parts:
         return 0
-    ring, zmin, zmax, top_idx = fp
-    height = zmax - zmin
-    floors = max(1, int(round((height - 1.0) / FLOOR_HEIGHT)))
-    fh = (height - 1.0) / floors if height > 2 else height
+    main = max(parts, key=lambda q: q[3])  # khoi lon nhat: dung cho vom, bang ten, truc chinh
+    ring, zmax = main[0], main[1]
 
     style = STYLE.get(obj.name, {})
     k_wall, k_roof = style.get("wall", "wall"), style.get("roof", "roof")
@@ -201,49 +297,65 @@ def detail_building(obj, coll):
     me.materials.clear()
     me.materials.append(mat(k_wall, 0.9))
     me.materials.append(mat(k_roof, 0.95))
+    roofs = {q[2] for q in parts}
     for p in me.polygons:
-        p.material_index = 1 if p.index == top_idx else 0
+        p.material_index = 1 if p.index in roofs else 0
 
     bm_trim, bm_glass = bmesh.new(), bmesh.new()
-    n_edges = len(ring)
-    for i in range(n_edges):
-        p0, p1 = ring[i], ring[(i + 1) % n_edges]
-        e = p1 - p0
-        L = e.length
-        if L < 0.5:
-            continue
-        t = e / L
-        n = Vector((t.y, -t.x))  # phap tuyen huong ra ngoai (vong nguoc chieu kim dong ho)
-
-        # go ngang o moi san + lan can mai
-        ext = t * 0.15
-        for k in range(1, floors + 1):
-            z = zmin + k * fh
-            if k == floors:
-                z = zmax
-            add_box(bm_trim, p0 - ext, p1 + ext, n, z - LEDGE_THICK, z, -0.01, LEDGE_DEPTH)
-        add_box(bm_trim, p0, p1, n, zmax, zmax + PARAPET_H, -PARAPET_T, 0.02)
-
-        # kinh lien (mat song song truc chinh)
-        if curtain and abs(t.dot(axis)) > 0.9 and L > 3:
-            add_quad(bm_glass, p0, p1, n, zmin + 0.6, zmax - 0.25, 0.05)
-            continue
-
-        # cua so
-        usable = L - 0.8
-        count = int((usable + WINDOW_GAP) // (WINDOW_W + WINDOW_GAP))
-        if count < 1:
-            continue
-        span = count * WINDOW_W + (count - 1) * WINDOW_GAP
-        start = (L - span) / 2
-        for k in range(floors):
-            z0 = zmin + k * fh + WINDOW_BOTTOM
-            z1 = min(z0 + WINDOW_H, zmin + (k + 1) * fh - LEDGE_THICK - 0.15)
-            if z1 - z0 < 0.6:
+    for pring, ptop, _, _ in parts:
+        height = ptop - zmin
+        floors = max(1, int(round((height - 1.0) / FLOOR_HEIGHT)))
+        fh = (height - 1.0) / floors if height > 2 else height
+        n_edges = len(pring)
+        for i in range(n_edges):
+            p0, p1 = pring[i], pring[(i + 1) % n_edges]
+            e = p1 - p0
+            L = e.length
+            if L < 0.5:
                 continue
-            for w in range(count):
-                s = start + w * (WINDOW_W + WINDOW_GAP)
-                add_quad(bm_glass, p0 + t * s, p0 + t * (s + WINDOW_W), n, z0, z1, 0.04)
+            t = e / L
+            n = Vector((t.y, -t.x))  # phap tuyen huong ra ngoai (vong nguoc chieu kim dong ho)
+            # canh tiep giap khoi khac: phan tuong thap hon mai khoi do bi che, chi lam tu do tro len
+            mid = (p0 + p1) / 2
+            covered = zmin
+            for oring, otop, _, _ in parts:
+                if oring is pring:
+                    continue
+                if any(on_segment(mid, oring[j], oring[(j + 1) % len(oring)]) for j in range(len(oring))):
+                    covered = max(covered, otop)
+            if covered >= ptop - 0.01:
+                continue  # tuong nay nam han ben trong khoi cao hon
+
+            # go ngang o moi san + lan can mai
+            ext = t * 0.15
+            for k in range(1, floors + 1):
+                z = zmin + k * fh
+                if k == floors:
+                    z = ptop
+                if z > covered + 0.3:
+                    add_box(bm_trim, p0 - ext, p1 + ext, n, z - LEDGE_THICK, z, -0.01, LEDGE_DEPTH)
+            add_box(bm_trim, p0, p1, n, ptop, ptop + PARAPET_H, -PARAPET_T, 0.02)
+
+            # kinh lien (mat song song truc chinh)
+            if curtain and abs(t.dot(axis)) > 0.9 and L > 3:
+                add_quad(bm_glass, p0, p1, n, max(zmin + 0.6, covered), ptop - 0.25, 0.05)
+                continue
+
+            # cua so
+            usable = L - 0.8
+            count = int((usable + WINDOW_GAP) // (WINDOW_W + WINDOW_GAP))
+            if count < 1:
+                continue
+            span = count * WINDOW_W + (count - 1) * WINDOW_GAP
+            start = (L - span) / 2
+            for k in range(floors):
+                z0 = zmin + k * fh + WINDOW_BOTTOM
+                z1 = min(z0 + WINDOW_H, zmin + (k + 1) * fh - LEDGE_THICK - 0.15)
+                if z1 - z0 < 0.6 or z0 < covered:
+                    continue
+                for w in range(count):
+                    s = start + w * (WINDOW_W + WINDOW_GAP)
+                    add_quad(bm_glass, p0 + t * s, p0 + t * (s + WINDOW_W), n, z0, z1, 0.04)
 
     tris = 0
     for key, bm, rough, metal, mkey in (("trim", bm_trim, 0.8, 0.0, k_trim), ("glass", bm_glass, 0.15, 0.3, k_glass)):

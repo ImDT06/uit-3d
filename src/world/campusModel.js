@@ -98,7 +98,24 @@ export function splitScene(scene) {
       });
       const box = new THREE.Box3();
       meshes.forEach((m) => box.expandByObject(m));
-      const y0 = box.min.y - 0.5, y1 = box.max.y, eps = 0.05;
+      const y0 = box.min.y - 0.5, eps = 0.05;
+      // toa nhieu cap mai (vd B 9/7/5 tang): moi lang tru cao bang mat mai nam ngay tren no
+      const roofs = [];
+      meshes.forEach((m) => {
+        const pos = m.geometry.attributes.position, idx = m.geometry.index;
+        const n = idx ? idx.count : pos.count;
+        for (let i = 0; i < n; i += 3) {
+          const t = [0, 1, 2].map((k) => new THREE.Vector3().fromBufferAttribute(pos, idx ? idx.getX(i + k) : i + k).applyMatrix4(m.matrixWorld));
+          if (t[0].y > box.min.y + 1 && Math.abs(t[0].y - t[1].y) < eps && Math.abs(t[0].y - t[2].y) < eps) roofs.push(t);
+        }
+      });
+      const inTri = (x, z, [a, b, c]) => {
+        const d1 = (x - b.x) * (a.z - b.z) - (a.x - b.x) * (z - b.z);
+        const d2 = (x - c.x) * (b.z - c.z) - (b.x - c.x) * (z - c.z);
+        const d3 = (x - a.x) * (c.z - a.z) - (c.x - a.x) * (z - a.z);
+        return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0));
+      };
+      const roofAt = (x, z) => roofs.find((t) => inTri(x, z, t))?.[0].y ?? box.max.y;
       meshes.forEach((m) => {
         const pos = m.geometry.attributes.position;
         const idx = m.geometry.index;
@@ -111,6 +128,7 @@ export function splitScene(scene) {
           if ([_a, _b, _c].some((v) => Math.abs(v.y - box.min.y) > eps)) continue; // chi lay mat day
           const area = Math.abs((_b.x - _a.x) * (_c.z - _a.z) - (_c.x - _a.x) * (_b.z - _a.z)) / 2;
           if (area < 0.05) continue; // tam giac suy bien -> hull loi
+          const y1 = roofAt((_a.x + _b.x + _c.x) / 3, (_a.z + _b.z + _c.z) / 3);
           const v = [];
           [_a, _b, _c].forEach((p) => v.push(p.x, y0, p.z, p.x, y1, p.z));
           solids.push({ key: bld.name + "_" + m.uuid.slice(0, 4) + "_" + i, verts: new Float32Array(v) });

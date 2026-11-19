@@ -64,7 +64,8 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
     Tạo bằng script `uit_gameplay.py` (chạy lại được), có thể kéo/sửa tay. Web đọc trong `Campus.jsx` → `store.zones/items`.
   - Mép `GND_Base` = biên khuôn viên, web dựng tường vô hình theo đó.
   - Dự kiến: `COL_*` collider riêng
-- Chiều cao: số tầng x 3.5 m + 1 m. A, C: 3 tầng; D: 1; B: 9; E: 12 (B, E theo OSM, chưa xác nhận);
+- Chiều cao: số tầng x 3.5 m + 1 m. A, C: 3 tầng; D: 1; B: 3 cấp mái 9/7/5 tầng (đầu tây → đầu đông, bảng
+  `TIERS` trong `uit_detail.py`, bản gốc giữ ở mesh `BLD_B_goc`); E: 12 (theo OSM, chưa xác nhận);
   căn tin 2; căn tin 2, chốt bảo vệ, X2: 1.
 - Script dựng mô hình ở `tools/blender/` (import → cleanup → fix → detail → gameplay → export).
 - Chi tiết tòa nhà + trồng cây + cổng chính: script `uit_detail.py` (chạy lại được, tự xóa chi tiết cũ).
