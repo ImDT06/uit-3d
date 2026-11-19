@@ -33,6 +33,8 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
   - `Campus.jsx`: va chạm (tòa nhà khối đặc, còn lại trimesh), tường biên, nhãn tên tòa, điểm xuất phát.
   - `Sun.jsx`: ánh sáng + bóng. Khám phá: vùng bóng ±60 m đi theo nhân vật; trang chủ/tham quan: phủ cả trường.
     Vật liệu glb đều 2 mặt nên `shadowSide = BackSide`; đất, lối đi, kính không đổ bóng (tránh vệt lấm tấm).
+  - `Atmosphere.jsx`: nền trời, sương mù, `Sky`; trang chủ trong suốt, vào tham quan thì hiện dần. Luôn gắn sẵn,
+    chỉ đổi thông số (thêm/bớt sương mù bắt biên dịch lại shader mọi vật liệu → đứng hình). Tone mapping: Neutral (`App.jsx`).
   - `Player.jsx`: điều khiển (bàn phím + joystick + tay cầm), camera (không xuyên tường), phát hiện khu vực.
   - `Student.jsx`: nhân vật sinh viên low-poly dựng bằng khối hình học, animation đi/chạy/nhảy
     tính bằng code theo vận tốc của ecctrl (không cần file model).
