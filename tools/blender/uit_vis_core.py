@@ -31,6 +31,8 @@ GAP = 1.5          # m, bit khe tuong rong toi 2*GAP (cua, tang tret trong) truo
 CLOSE = {"VIS_B": 4.0}
 # rieng tung toa: bo cac muc mai thap hon (m) - B: muc 2,0/2,7/3,4 xep thanh bac, nhan vat leo len mai duoc
 MIN_LEVEL = {"VIS_B": 4.0}
+# rieng tung toa: lap cho lom trong tren cao (MyUIT de trong tu chan len troi) - gia tri = m lui vao o mat ngoai
+NOTCH = {"VIS_B": 1.5}
 SIMPLIFY = 0.3     # m, sai lech toi da khi lam tron duong vien
 MIN_LEVEL_AREA = 25.0
 
@@ -162,6 +164,66 @@ def cap_tris(polys):
     return tris
 
 
+def extrude(bm, m, z0, top, lo):
+    """Dun vung o m thanh khoi tu z0 len top (duong vien lam tron, nap giu lo)."""
+    polys = []
+    for lp in loops_of(m):
+        pts = rdp(np.vstack([lp, lp[:1]]), SIMPLIFY / R)[:-1]
+        if len(pts) >= 3:
+            polys.append([mathutils.Vector((lo[0] + x * R, lo[1] + y * R, 0)) for x, y in pts])
+    if not polys:
+        return
+    flat = [p for poly in polys for p in poly]
+    vb = [bm.verts.new((p.x, p.y, z0)) for p in flat]
+    vt = [bm.verts.new((p.x, p.y, top)) for p in flat]
+    for t in cap_tris(polys):
+        try:
+            bm.faces.new([vt[t[0]], vt[t[1]], vt[t[2]]]); bm.faces.new([vb[t[2]], vb[t[1]], vb[t[0]]])
+        except ValueError:
+            pass
+    off = 0
+    for poly in polys:
+        k = len(poly)
+        for s in range(k):
+            try:
+                bm.faces.new([vb[off + s], vb[off + (s + 1) % k], vt[off + (s + 1) % k], vt[off + s]])
+            except ValueError:
+                pass
+        off += k
+
+
+def fill_notches(bm, masks, base, lo, setback):
+    """Lap cho lom hep (< ~12 m) giua cac khoi: cao bang khoi thap hon ben canh, chua lui `setback` m o mat ngoai."""
+    U = np.zeros_like(masks[0][1])
+    Ht = np.zeros(U.shape)
+    for top, m in masks:
+        U |= m; Ht[m] = np.maximum(Ht[m], top)
+    c = int(6.0 / R)  # lom rong toi ~12 m
+    closed = erode(dilate(U, c), c)
+    notch = closed & ~U & ~dilate(~closed, int(setback / R))
+    # gan nhan tung cho lom
+    lab = np.zeros(U.shape, int); k = 0
+    for j, i in zip(*np.nonzero(notch)):
+        if lab[j, i]:
+            continue
+        k += 1; st = [(j, i)]; lab[j, i] = k
+        while st:
+            a, b = st.pop()
+            for y, x in ((a + 1, b), (a - 1, b), (a, b + 1), (a, b - 1)):
+                if 0 <= y < U.shape[0] and 0 <= x < U.shape[1] and notch[y, x] and not lab[y, x]:
+                    lab[y, x] = k; st.append((y, x))
+    for n in range(1, k + 1):
+        comp = lab == n
+        if comp.sum() * R * R < 10:
+            continue
+        ring = dilate(comp, int(1.0 / R)) & U
+        if not ring.any():
+            continue
+        top = float(np.percentile(Ht[ring], 20))
+        extrude(bm, comp, base, top, lo)
+        log(f"  lap cho lom {comp.sum() * R * R:.0f} m2, cao {top:.1f} m")
+
+
 def build_core(V):
     t0 = time.time()
     H, lo, base, wall_mat, walls = heightmap(V)
@@ -215,6 +277,9 @@ def build_core(V):
                 except ValueError:
                     pass
             off += k
+    nf = NOTCH.get(V.name)
+    if nf and masks:
+        fill_notches(bm, masks, base, lo, nf)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     name = V.name + "_core"
     old = bpy.data.objects.get(name)
