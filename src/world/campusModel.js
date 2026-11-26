@@ -241,10 +241,10 @@ export function splitScene(scene) {
 
   // luoi chan camera (camera khong xuyen qua toa nha)
   const camBlockers = [];
-  // ban cat tu MyUIT (co toa trimesh): bac ngoi PODIUM_ cung chan camera
+  // ban cat tu MyUIT (co toa trimesh): bac ngoi PODIUM_ va mai che loi di ROOF_ cung chan camera
   const cut = scene.children.some((o) => o.userData.trimesh);
   scene.children
-    .filter((o) => o.name.startsWith("BLD_") || (cut && o.name.startsWith("PODIUM_")))
+    .filter((o) => o.name.startsWith("BLD_") || (cut && /^(PODIUM|ROOF)_/.test(o.name)))
     .forEach((o) => {
       // co loi VIS_*_core: chan camera bang loi (khop tuong nhin thay); khong thi bang than BLD_ (bo qua luoi VIS_ nang)
       const cores = [];
