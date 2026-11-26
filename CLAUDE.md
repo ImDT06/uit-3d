@@ -74,6 +74,8 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
     Mặt đất MyUIT gốc cao 0,57 m → hạ cả khối 0,37 m (đất thường ≈ 0,2 m), **giữ nguyên độ cao thật** của sân nâng
     (sân B–C ≈ 1,2 m...; chủ dự án xác nhận trường mới xây lại, MyUIT đúng). Đồ vật `PROP_*` hạ cùng mức nên đứng đúng
     trên đất. Bản ép phẳng cũ: `GND_myuit_phang`, `GND_congA_phang` (VIS_BACKUP). Cắt theo khung `GND_Base`.
+    Đồ vật cao (> 1,5 m: mái che, giàn hoa, đèn, cột) trong `PROP_myuit` không uốn: mỗi cụm dời + xoay nguyên khối theo phép uốn
+    tại tâm cụm (giữ đúng hình MyUIT); đồ thấp bám đất (bồn cây, bờ, bậc, ghế) vẫn uốn theo mặt đất. Bản uốn cũ: `PROP_myuit_uon`.
     `GND_lap`: miếng vá lỗ thủng (< 3 m) trên sân nâng (chỗ đã xóa bồn cây/cây), độ cao + vật liệu lấy từ xung quanh.
     Mặt đất để shading phẳng (flat); tòa/đồ vật MyUIT: cạnh gấp > 30° sắc (smooth toàn bộ làm tam giác dài bị loang tối).
     Cây: `CAY_myuit` (mesh gộp mọi cây MyUIT, chỉ hiển thị) + `CAY_###` (empty ở gốc, web dựng trụ va chạm như `TREE_*`).
