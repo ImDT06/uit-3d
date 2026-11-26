@@ -262,6 +262,9 @@ export function splitScene(scene) {
         camBlockers.push(m);
       });
     });
+  // mat dat: chi chan camera khi ngo len (camera ha xuong thap hon nhan vat), xem Player.jsx
+  const camGround = [];
+  ["map", "GND_Base"].forEach((n) => scene.getObjectByName(n)?.traverse((m) => m.isMesh && camGround.push(m)));
   // tuong bien vo hinh quanh mep mat dat (GND_Base), khong cho di ra ngoai truong
   const walls = [];
   const base = scene.getObjectByName("GND_Base");
@@ -279,7 +282,7 @@ export function splitScene(scene) {
     edge = list.sort((a, b) => Math.atan2(a[1] - mz, a[0] - mx) - Math.atan2(b[1] - mz, b[0] - mx));
   }
   if (edge) {
-    const H = 15, T = 1;
+    const H = 60, T = 1; // cao 120 m: che do bay len duoc noc toa cao ma khong lot ra ngoai
     edge.forEach(([x0, z0], i) => {
       const [x1, z1] = edge[(i + 1) % edge.length];
       const dx = x1 - x0, dz = z1 - z0, len = Math.hypot(dx, dz);
@@ -292,7 +295,7 @@ export function splitScene(scene) {
     });
   } else if (base) {
     const b = bounds;
-    const H = 15, T = 1; // nua chieu cao, nua do day
+    const H = 60, T = 1; // nua chieu cao, nua do day
     const cx = (b.min.x + b.max.x) / 2, cz = (b.min.z + b.max.z) / 2;
     const hx = (b.max.x - b.min.x) / 2 + T, hz = (b.max.z - b.min.z) / 2 + T;
     walls.push(
@@ -313,7 +316,7 @@ export function splitScene(scene) {
       const c = box.getCenter(new THREE.Vector3());
       return { name: o.name, center: [c.x, box.max.y + 2, c.z] };
     });
-  scene.userData.split = { deco, trees, buildings, camBlockers, walls, zones, items, solids, bounds, landmarks, edge };
+  scene.userData.split = { deco, trees, buildings, camBlockers, camGround, walls, zones, items, solids, bounds, landmarks, edge };
   return scene.userData.split;
 }
 

@@ -4,7 +4,7 @@ import { useGame } from "../game/store";
 import { doAction } from "../game/actions";
 
 // Dieu khien cam ung kieu Roblox:
-// - nua trai man hinh: joystick dong (cham dau thi can dieu khien hien o do, keo qua vien thi de keo theo)
+// - nua trai man hinh: joystick dong (cham dau thi can dieu khien hien o do va dung yen toi khi tha tay)
 // - goc phai duoi: nut nhay lon, nut chay + shift lock xep quanh
 // - vuot nua phai: xoay camera (CameraControls tren canvas tu xu ly), hai ngon: zoom
 // Gia tri ghi vao store cua ecctrl/input nen Player.jsx doc nhu cu (joysticks.move, buttons.jump/run).
@@ -55,13 +55,9 @@ function Thumbstick() {
     let dy = y - s.cy;
     const d = Math.hypot(dx, dy);
     if (d > R) {
-      // keo qua vien: de dieu khien di theo ngon tay (giong Roblox)
-      const k = (d - R) / d;
-      s.cx += dx * k;
-      s.cy += dy * k;
-      dx -= dx * k;
-      dy -= dy * k;
-      place();
+      // keo qua vien: de dung yen, num dung o vien theo huong ngon tay
+      dx *= R / d;
+      dy *= R / d;
     }
     if (knob.current) knob.current.style.transform = `translate(${dx}px, ${dy}px)`;
     let nx = dx / R;
@@ -177,6 +173,7 @@ const Icon = ({ d, size = 30 }) => (
 export default function TouchControls() {
   const shiftLock = useGame((s) => s.shiftLock);
   const view = useGame((s) => s.viewMode);
+  const flying = useGame((s) => s.flying);
   const [run, setRun] = useState(false);
   const setBtn = useButtonStore((s) => s.setButtonActive);
   useEffect(() => () => setBtn("run", false), [setBtn]);
@@ -195,6 +192,14 @@ export default function TouchControls() {
         <ToggleButton on={run} onTap={toggleRun} className="tc-run" label="Chạy">
           <span>🏃</span>
         </ToggleButton>
+        <ToggleButton on={flying} onTap={() => doAction("fly")} className="tc-fly" label="Bay">
+          <span>🕊️</span>
+        </ToggleButton>
+        {flying && (
+          <HoldButton id="down" className="tc-down" label="Bay xuống">
+            <Icon d="M5 9l7 7 7-7" size={26} />
+          </HoldButton>
+        )}
         {view !== "first" && (
           <ToggleButton on={shiftLock} onTap={() => doAction("shiftLock")} className="tc-lock" label="Shift lock">
             <Icon d="M7 11V8a5 5 0 0110 0v3M6 11h12v9H6z" size={22} />

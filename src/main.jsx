@@ -8,6 +8,7 @@ import "./styles/menu.css";
 import "./styles/admin.css";
 import "./styles/hud.css";
 import "./styles/intro.css";
+import "./styles/picker.css";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

@@ -100,6 +100,7 @@ function Help() {
           <div>{bindLabel("run")}: {holdToRun ? "giữ để chạy" : "bật/tắt chạy"} · gõ đúp {bindLabel("forward").split(" / ")[0]}: chạy</div>
           <div>Giữ chuột phải: xoay camera · Lăn chuột: zoom</div>
           <div>{bindLabel("shiftLock")}: shift lock · {bindLabel("view")}: đổi góc nhìn</div>
+          <div>{bindLabel("fly")}: bay · khi bay: {bindLabel("jump")} lên, {bindLabel("down")} xuống</div>
           <div>{bindLabel("interact")}: xem thông tin · {bindLabel("map")}: bản đồ · Esc: menu</div>
         </>
       ) : (

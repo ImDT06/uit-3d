@@ -72,6 +72,14 @@ tách thành object, không dời/uốn đỉnh, không thêm khối nhìn thấ
 - Màu đổi trên web theo tên vật liệu: `src/world/palette.js` (`?mau=goc` xem màu gốc). Không tự tô thêm họa tiết.
 - Chưa có `ITEM_*` (điểm vật phẩm nhiệm vụ). Chưa đo FPS trên điện thoại.
 
+## Nhân vật
+
+- `public/models/nv_nam.glb`, `nv_nu.glb`: dựng từ bộ Ultimate Modular Men/Women của Quaternius + đồng phục UIT
+  bằng `tools/blender/uit_nhanvat.py` (`-- xuat`; nguồn và ảnh logo/balo ở `D:\uit3d\nhanvat_goc`). Động tác
+  `Walk`, `Run` của bộ gốc; `Idle` (đứng thẳng), `Jump`, `Fall`, `Hover`, `Fly`, `Dive` (chế độ bay, phím F) tự làm trong script (`dong_tac`). Tóc dài là object `ToDai`.
+- `world/Avatar.jsx` (mô hình), `world/Student.jsx` (động tác theo vận tốc), `ui/CharacterPicker.jsx` (bảng chọn,
+  hiện lần đầu vào khám phá, đổi trong Menu). Lựa chọn lưu ở `settings.avatar`.
+
 ## Mô hình 3D (bản cũ, đã bỏ)
 
 - Dựng trong Blender 5.3, file gốc `D:\uit3d\blender\uit_blockout.blend` (không nằm trong repo).

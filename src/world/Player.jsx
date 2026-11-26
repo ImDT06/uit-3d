@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MeshBVH, acceleratedRaycast } from "three-mesh-bvh";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useKeyboardControls, CameraControlsImpl } from "@react-three/drei";
@@ -15,8 +15,10 @@ import Student from "./Student";
 const SHOULDER_OFFSET = 1.2;  // m: lech camera sang phai khi shift lock
 const MOUSE_SENS = 0.003;     // rad / pixel khi khoa chuot (nhan voi do nhay trong cai dat)
 const PAD_SENS = 2.6;         // rad / giay khi gat het cam phai tay cam
-const THIRD_MIN_DIST = 3;
+const THIRD_MIN_DIST = 0.2; // m: zoom o goc nhin thu ba khong chan lai giua chung
+const FP_AT = 0.3;            // m: camera vao qua mat (vao trong dau) thi sang goc nhin thu nhat
 const FIRST_DIST = 0.05;
+const FACE_HEIGHT = 0.62;     // m tren tam than: ngang mat nhan vat
 const HEAD_HEIGHT = 0.7;      // m tren tam vien nhong
 const COYOTE_TIME = 0.12;     // s: van nhay duoc ngay sau khi buoc khoi mep
 const JUMP_BUFFER = 0.15;     // s: bam nhay som truoc khi cham dat van tinh
@@ -25,7 +27,8 @@ const CAM_FOLLOW_DELAY = 1.2; // s: khong cham camera bao lau thi camera tu ve s
 const _zp = new THREE.Vector3();
 const ZONE_MARGIN = 8;        // m: dung cach toa nha bao nhieu thi tinh la "o gan"
 
-const TIGHT_IN = 1.2;         // m: camera gan hon muc nay thi an nhan vat
+const MAX_POLAR = Math.PI * 0.82; // ngo len toi da (0.5 = nhin ngang)
+const TIGHT_IN = 1.2;        // m: camera gan hon muc nay thi an nhan vat
 const TIGHT_OUT = 1.5;        // m: xa hon muc nay thi hien lai
 const SIDE_MARGIN = 0.3;      // m: khoang cach toi thieu tu camera toi tuong ben (shift lock)
 const side = new THREE.Vector3();
@@ -34,18 +37,41 @@ const sideRay = new THREE.Raycaster();
 const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const dz = (v, d = 0.15) => (Math.abs(v) < d ? 0 : (v - Math.sign(v) * d) / (1 - d));
 const fwd = new THREE.Vector3();
+const FLY_SPEED = 14;         // m/s khi bay
+const FLY_FAST = 32;          // m/s khi bay nhanh (che do chay)
+const FLY_UP = 10;            // m/s len / xuong
+const FLY_ABOVE = 20;         // m: tran bay = noc toa cao nhat + chung nay (tuong bien cao 120 m)
+const UP = new THREE.Vector3(0, 1, 0);
+const flyQuat = new THREE.Quaternion();
+const flyGoal = new THREE.Quaternion();
+const look = new THREE.Vector3();
+const FLY_FOOT = 0.85;        // m: tu tam than toi ban chan
+const DOWN = new THREE.Vector3(0, -1, 0);
+const flyVel = new THREE.Vector3();
+const flyDir = new THREE.Vector3();
+// khoang cach toi be mat dau tien theo huong dir (Infinity neu khong co gi trong tam far)
+function hitDistance(from, dir, far, meshes) {
+  sideRay.set(side.copy(from), dir);
+  sideRay.far = far;
+  return sideRay.intersectObjects(meshes, false)[0]?.distance ?? Infinity;
+}
 
 export default function Player() {
   const spawn = useGame((s) => s.spawn);
   const buildings = useGame((s) => s.buildings);
   const camBlockers = useGame((s) => s.camBlockers);
+  const camGround = useGame((s) => s.camGround);
+  // ngo len: them mat dat vao danh sach chan camera (camera truot sat lai thay vi chui xuong dat)
+  const lowBlockers = useMemo(() => [...camBlockers, ...camGround], [camBlockers, camGround]);
   const tuning = useGame((s) => s.tuning);
   const teleport = useGame((s) => s.teleport);
   const shiftLock = useGame((s) => s.shiftLock);
+  const flying = useGame((s) => s.flying);
   const viewMode = useGame((s) => s.viewMode);
   const menuOpen = useGame((s) => s.menuOpen);
   const mapOpen = useGame((s) => s.mapOpen);
   const adminOpen = useGame((s) => s.adminOpen);
+  const pickerOpen = useGame((s) => s.pickerOpen);
   const sens = useSettings((s) => s.mouseSens);
   const invertY = useSettings((s) => s.invertY);
 
@@ -74,12 +100,21 @@ export default function Player() {
     lastPos: null,
     pad: [],
     tight: false,
+    thirdDist: 6,          // khoang zoom goc nhin thu ba gan nhat (de quay ve dung cho cu)
   });
   const [tight, setTight] = useState(false);
 
   const first = viewMode === "first";
-  const overlay = menuOpen || mapOpen || adminOpen;
+  const overlay = menuOpen || mapOpen || adminOpen || pickerOpen;
   const wantLock = (shiftLock || first) && !overlay;
+
+  // ---- Bay: bat thi tat trong luc (ecctrl bi tat, xem prop enable), tat thi tra lai de roi xuong ----
+  useEffect(() => {
+    const body = ecctrl.current?.body;
+    if (!body) return;
+    body.setGravityScale(flying ? 0 : 1, true);
+    if (!flying) body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+  }, [flying]);
 
   // ---- Dich chuyen (admin) ----
   useEffect(() => {
@@ -113,13 +148,12 @@ export default function Player() {
   // ---- Camera khong xuyen tuong ----
   useEffect(() => {
     // luoi nhieu mat: lap cay tim kiem (BVH) de do tia nhanh; indirect = khong dao thu tu mat cua luoi goc
-    for (const m of camBlockers) {
+    for (const m of lowBlockers) {
       if (m.geometry.boundsTree || m.geometry.attributes.position.count < 1000) continue;
       m.geometry.boundsTree = new MeshBVH(m.geometry, { indirect: true });
       m.raycast = acceleratedRaycast;
     }
-    if (cam.current) cam.current.colliderMeshes = first ? [] : camBlockers;
-  }, [camBlockers, spawn, first]);
+  }, [lowBlockers]);
 
   // ---- Do nhay / dao truc Y khi keo chuot phai, cam ung ----
   useEffect(() => {
@@ -148,7 +182,8 @@ export default function Player() {
       c.dollyTo(FIRST_DIST, true);
     } else {
       c.minDistance = THIRD_MIN_DIST;
-      if (c.distance < THIRD_MIN_DIST + 0.5) c.dollyTo(6, true);
+      // tu goc nhin thu nhat ve: dung khoang zoom truoc do (doi 1 khung hinh de nac lan chuot vua roi khong cong them)
+      if (c.distance <= FP_AT) requestAnimationFrame(() => c.dollyTo(t.current.thirdDist, true));
     }
   }, [spawn, wantLock, shiftLock, first]);
 
@@ -207,15 +242,21 @@ export default function Player() {
     const c = cam.current;
     if (!c) return;
     const canvas = gl.domElement;
+    // zoom xuyen qua mat (lan chuot hoac chum ngon tay) -> goc nhin thu nhat
+    const zoomedThrough = () => {
+      const g = useGame.getState();
+      if (!g.anyOverlay() && g.viewMode === "third" && c._sphericalEnd.radius <= FP_AT) g.setViewMode("first");
+    };
     const onWheel = (e) => {
       const g = useGame.getState();
       if (g.anyOverlay()) return;
       if (g.viewMode === "first" && e.deltaY > 0) g.setViewMode("third");
-      else if (g.viewMode === "third" && e.deltaY < 0 && c.distance <= THIRD_MIN_DIST + 0.05) g.setViewMode("first");
+      else if (e.deltaY < 0) zoomedThrough();
     };
     const onControl = () => {
       t.current.lastManualCam = performance.now() / 1000;
       useGame.getState().tutorialEvent("camera");
+      zoomedThrough();
     };
     canvas.addEventListener("wheel", onWheel, { passive: true });
     c.addEventListener("controlstart", onControl);
@@ -236,7 +277,7 @@ export default function Player() {
     const T = t.current;
     const g = useGame.getState();
     const settings = useSettings.getState();
-    const paused = g.menuOpen || g.mapOpen;
+    const paused = g.menuOpen || g.mapOpen || g.pickerOpen;
 
     // ---------- 1. Tay cam (Gamepad API chuan cua trinh duyet) ----------
     let padMove = { x: 0, y: 0 };
@@ -253,6 +294,7 @@ export default function Player() {
         if (edge(2)) doAction("interact");
         if (edge(3)) doAction("view");
         if (edge(5)) doAction("shiftLock");
+        if (edge(4)) doAction("fly");
         if (edge(1) || edge(10)) doAction("runToggle");
         padJump = !!b[0];
         padMove = { x: dz(pad.axes[0] || 0), y: -dz(pad.axes[1] || 0) };
@@ -296,7 +338,8 @@ export default function Player() {
     const onGround = !!c.isOnGround;
     if (onGround) T.lastGround = now;
     const buffered = now - T.jumpPressedAt < JUMP_BUFFER;
-    if (buffered && !onGround && now - T.lastGround < COYOTE_TIME && now - T.jumpedAt > 0.3) {
+    if (g.flying) T.jumpPressedAt = -10;
+    else if (buffered && !onGround && now - T.lastGround < COYOTE_TIME && now - T.jumpedAt > 0.3) {
       const v = c.body.linvel();
       c.body.setLinvel({ x: v.x, y: tuning.jump, z: v.z }, true);
       T.jumpedAt = now;
@@ -309,7 +352,7 @@ export default function Player() {
       g.tutorialEvent("jump");
     }
 
-    c.setMovement({
+    if (!g.flying) c.setMovement({
       forward: !!k.forward,
       backward: !!k.backward,
       leftward: !!k.leftward,
@@ -319,12 +362,63 @@ export default function Player() {
       joystick,
     });
 
+    // ---------- 2b. Bay: W bay theo huong nhin (ca len / xuong), nguoi quay theo huong bay ----------
+    if (g.flying) {
+      const mx = joystick.x || (k.rightward ? 1 : 0) - (k.leftward ? 1 : 0);
+      const mz = joystick.y || (k.forward ? 1 : 0) - (k.backward ? 1 : 0);
+      const len = Math.max(1, Math.hypot(mx, mz));
+      const az = cc.azimuthAngle;
+      const sp = run ? FLY_FAST : FLY_SPEED;
+      state.camera.getWorldDirection(look); // huong nhin 3 chieu
+      const vx = ((look.x * mz) / len + (Math.cos(az) * mx) / len) * sp;
+      const vz = ((look.z * mz) / len - (Math.sin(az) * mx) / len) * sp;
+      let vy = ((look.y * mz) / len) * sp;
+      // Space / Q: len, xuong thang dung
+      vy += ((jumpKey ? 1 : 0) - (!paused && (k.down || btn.down || pad?.buttons[6]?.pressed) ? 1 : 0)) * FLY_UP;
+      if (vy > 0 && c.body.translation().y >= Math.min(Math.max(0, ...buildings.map((b) => b.box.max.y)) + FLY_ABOVE, 115)) vy = 0;
+      // van toc dat thang moi frame de day than xuyen qua mat luoi mong -> do tia truoc, gan toi thi ham lai
+      const at = c.body.translation();
+      flyVel.set(vx, vy, vz);
+      if (flyVel.y < 0) {
+        const room = hitDistance(at, DOWN, 4, lowBlockers) - FLY_FOOT; // khoang trong duoi chan
+        flyVel.y = Math.max(flyVel.y, -Math.max(0, room) * 8);
+      }
+      const speed3 = flyVel.length();
+      if (speed3 > 0.1) {
+        const room = hitDistance(at, flyDir.copy(flyVel).divideScalar(speed3), 5, lowBlockers) - 0.5;
+        const max = Math.max(0, room) * 10;
+        if (speed3 > max) flyVel.multiplyScalar(max / speed3);
+      }
+      c.body.setGravityScale(0, true);
+      c.body.setLinvel(flyVel, true);
+      c.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      // mat quay theo huong dang bay (nhu di bo: bam S thi quay mat ve phia camera); dung yen thi giu huong.
+      // Shift lock / goc nhin thu nhat: luon quay theo camera
+      const locked = g.shiftLock || g.viewMode === "first";
+      if (locked || ((mx || mz) && Math.hypot(vx, vz) > 0.5)) {
+        const q = c.body.rotation();
+        const face = locked ? az + Math.PI : Math.atan2(vx, vz);
+        flyQuat.set(q.x, q.y, q.z, q.w).slerp(flyGoal.setFromAxisAngle(UP, face), Math.min(1, dt * 10));
+        c.body.setRotation(flyQuat, true);
+      }
+    }
+
     // ---------- 3. Camera bam theo nhan vat ----------
-    const p = c.currPos;
-    cc.moveTo(p.x, p.y + (g.viewMode === "first" ? HEAD_HEIGHT : 0.8), p.z, true);
+    // dang bay thi ecctrl khong cap nhat currPos / currQuat -> lay thang tu than vat ly
+    const p = g.flying ? c.body.translation() : c.currPos;
+    // zoom sat thi ha diem nhin tu dinh dau xuong ngang mat
+    const wanted = cc._sphericalEnd.radius; // khoang cach nguoi choi chon (chua tinh bi tuong ep)
+    if (g.viewMode === "third" && wanted > FP_AT) T.thirdDist = wanted;
+    const lookAt = g.viewMode === "first" ? HEAD_HEIGHT : THREE.MathUtils.lerp(FACE_HEIGHT, 0.8, THREE.MathUtils.smoothstep(wanted, 0.5, 3));
+    cc.moveTo(p.x, p.y + lookAt, p.z, true);
+    cc.colliderMeshes = g.viewMode === "first" ? [] : cc.polarAngle > Math.PI / 2 ? lowBlockers : camBlockers;
 
     // camera bi tuong ep sat nhan vat -> an nhan vat (nhin nhu goc thu nhat); 2 nguong lech nhau de khong nhap nhay
-    const isTight = g.viewMode === "third" && cc.distance < (T.tight ? TIGHT_OUT : TIGHT_IN);
+    // ngo len han thi camera nam sat dat, nhan vat che het tam nhin -> cung an
+    const lookUp = cc.polarAngle > Math.PI * (T.tight ? 0.6 : 0.63);
+    // chi an khi camera bi ep lai gan hon muc nguoi choi chon (tu zoom sat de ngam mat thi van hien)
+    const squeezed = wanted - cc.distance > 0.2 && cc.distance < (T.tight ? TIGHT_OUT : TIGHT_IN);
+    const isTight = g.viewMode === "third" && (squeezed || (lookUp && cc.distance < 3.5 && wanted > 3.5));
     if (isTight !== T.tight) {
       T.tight = isTight;
       setTight(isTight);
@@ -340,7 +434,7 @@ export default function Player() {
     }
     cc.setFocalOffset(shoulder, 0, 0, true);
 
-    fwd.set(0, 0, 1).applyQuaternion(c.currQuat);
+    fwd.set(0, 0, 1).applyQuaternion(g.flying ? c.body.rotation() : c.currQuat);
     const speed = c.relativeVelOnPlane ? c.relativeVelOnPlane.length() : 0;
     playerPos.x = p.x;
     playerPos.y = p.y;
@@ -352,7 +446,7 @@ export default function Player() {
     // camera tu xoay ve sau lung khi dang di toi va khong cham chuot (giong GTA / Zelda)
     const goingForward = (k.forward && !k.backward) || joystick.y > 0.3;
     if (
-      settings.camFollow && !paused && g.viewMode === "third" && !g.shiftLock &&
+      settings.camFollow && !paused && !g.flying && g.viewMode === "third" && !g.shiftLock &&
       goingForward && speed > 1 && performance.now() / 1000 - T.lastManualCam > CAM_FOLLOW_DELAY
     ) {
       const target = Math.atan2(-fwd.x, -fwd.z);
@@ -371,7 +465,7 @@ export default function Player() {
     // ---------- 4. Am thanh buoc chan / tiep dat ----------
     if (T.lastPos) {
       const moved = Math.hypot(p.x - T.lastPos.x, p.z - T.lastPos.z);
-      if (onGround && speed > 0.5) {
+      if (onGround && !g.flying && speed > 0.5) {
         T.stepDist += moved;
         if (T.stepDist > 0.55 + speed * 0.09) {
           T.stepDist = 0;
@@ -426,6 +520,7 @@ export default function Player() {
     <>
       <Ecctrl
         ref={ecctrl}
+        enable={!flying}
         position={spawn}
         capsuleHalfHeight={0.5}
         capsuleRadius={0.3}
@@ -433,7 +528,8 @@ export default function Player() {
         maxRunVel={tuning.run}
         jumpVel={tuning.jump}
         enableToggleRun={false}
-        rayHitForgiveness={0.35}
+        // nho: de lon thi vua bat len van bi coi la cham dat, luc treo keo nguoc xuong (chi nhich ~20 cm)
+        rayHitForgiveness={0.1}
         ccd
         accDeltaTime={0.15}
         decDeltaTime={0.12}
@@ -448,7 +544,7 @@ export default function Player() {
         dollySpeed={0.6}
         minDistance={THIRD_MIN_DIST}
         maxDistance={40}
-        maxPolarAngle={Math.PI * 0.48}
+        maxPolarAngle={MAX_POLAR}
       />
     </>
   );

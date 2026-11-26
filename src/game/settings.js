@@ -12,9 +12,11 @@ export const ACTIONS = [
   { id: "view", label: "Đổi góc nhìn", keys: ["KeyV"] },
   { id: "interact", label: "Tương tác", keys: ["KeyE"] },
   { id: "map", label: "Bản đồ", keys: ["KeyM"] },
+  { id: "fly", label: "Bay (bật/tắt)", keys: ["KeyF"] },
+  { id: "down", label: "Bay xuống", keys: ["KeyQ"] },
 ];
 // cac hanh dong giu phim (KeyboardControls); con lai la bam mot lan
-export const HOLD_ACTIONS = ["forward", "backward", "leftward", "rightward", "jump", "run"];
+export const HOLD_ACTIONS = ["forward", "backward", "leftward", "rightward", "jump", "run", "down"];
 
 export const DEFAULT_BINDS = Object.fromEntries(ACTIONS.map((a) => [a.id, a.keys]));
 
@@ -27,6 +29,7 @@ export const DEFAULT_SETTINGS = {
   volume: 0.6,
   quality: "auto",       // auto | low | medium | high
   binds: DEFAULT_BINDS,
+  avatar: null,          // { gender: "nam" | "nu", hair: "ngan" | "dai" }; null: chua chon
 };
 
 const KEY = "uit3d-settings";
@@ -68,7 +71,7 @@ export const useSettings = create((set, get) => ({
     save(get());
   },
   reset: () => {
-    set({ ...DEFAULT_SETTINGS });
+    set({ ...DEFAULT_SETTINGS, avatar: get().avatar }); // giu nhan vat da chon
     save(get());
   },
 }));

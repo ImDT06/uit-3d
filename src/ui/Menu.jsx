@@ -111,6 +111,7 @@ function PadTab() {
     ["Y / △", "Đổi góc nhìn"],
     ["RB / R1", "Shift lock"],
     ["Back / Share", "Bản đồ"],
+    ["LB / L1", "Bật/tắt bay (LT / L2: bay xuống)"],
     ["Start / Options", "Menu"],
   ];
   return (
@@ -150,6 +151,7 @@ export default function Menu() {
           <>
             <div className="menu-title">Tạm dừng</div>
             <button className="primary" onClick={close}>Tiếp tục</button>
+            <button onClick={() => setUi({ menuOpen: false, pickerOpen: true })}>Đổi nhân vật</button>
             <button onClick={() => setTab("settings")}>Cài đặt</button>
             <button onClick={() => setTab("keys")}>Phím điều khiển</button>
             <button onClick={() => setTab("pad")}>Tay cầm</button>

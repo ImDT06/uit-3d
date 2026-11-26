@@ -6,7 +6,7 @@ import { unlockAudio } from "./sfx";
 // Hanh dong bam mot lan, dung chung cho ban phim, tay cam va nut cam ung
 export function doAction(id) {
   const g = useGame.getState();
-  if (g.mode !== "explore") return; // trang chu / tham quan co phim rieng
+  if (g.mode !== "explore" || g.pickerOpen) return; // trang chu / tham quan co phim rieng; dang chon nhan vat thi bo qua
   switch (id) {
     case "menu":
       if (g.mapOpen) return g.setUi({ mapOpen: false });
@@ -27,6 +27,9 @@ export function doAction(id) {
       if (g.anyOverlay() || !g.currentZone) return;
       g.setUi({ infoOpen: !g.infoOpen });
       return g.tutorialEvent("interact");
+    case "fly":
+      if (g.anyOverlay()) return;
+      return g.setUi({ flying: !g.flying });
     case "runToggle":
       if (g.anyOverlay()) return;
       return g.setRunToggled(!g.runToggled);
@@ -51,7 +54,7 @@ export function useHotkeys() {
         return;
       }
       const { binds, holdToRun } = useSettings.getState();
-      for (const id of ["shiftLock", "view", "interact", "map"]) {
+      for (const id of ["shiftLock", "view", "interact", "map", "fly"]) {
         if (binds[id]?.includes(e.code)) {
           e.preventDefault();
           doAction(id);

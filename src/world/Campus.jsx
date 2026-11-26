@@ -26,7 +26,7 @@ export default function Campus() {
   const setWorld = useGame((s) => s.setWorld);
   const setGameplay = useGame((s) => s.setGameplay);
   const debug = useGame((s) => s.physicsDebug);
-  const { deco, trees, buildings, camBlockers, walls, zones, items, solids, landmarks } = useMemo(() => splitScene(scene), [scene]);
+  const { deco, trees, buildings, camBlockers, camGround, walls, zones, items, solids, landmarks } = useMemo(() => splitScene(scene), [scene]);
 
   useEffect(() => {
     setGameplay(zones, items);
@@ -36,8 +36,8 @@ export default function Campus() {
     // object SPAWN (empty) trong glb thi dung lam diem xuat phat (vd ban thu MyUIT nguyen ban, khong co BLD_)
     const sp = scene.getObjectByName("SPAWN");
     const spawn = sp ? [sp.position.x, sp.position.y + 2, sp.position.z] : findSpawn(buildings.map((b) => b.box));
-    setWorld(spawn, buildings, camBlockers);
-  }, [scene, buildings, camBlockers, setWorld]);
+    setWorld(spawn, buildings, camBlockers, camGround);
+  }, [scene, buildings, camBlockers, camGround, setWorld]);
 
   return (
     <>

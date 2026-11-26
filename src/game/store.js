@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 // Thong so mac dinh cua nhan vat (admin co the chinh)
-export const DEFAULT_TUNING = { walk: 4, run: 9, jump: 5 };
+export const DEFAULT_TUNING = { walk: 4, run: 7, jump: 4 };
 
 function loadTuning() {
   try {
@@ -35,7 +35,7 @@ export const useGame = create((set, get) => ({
   tourStops: [],          // [{ key, title, subtitle, description, image, cam, target, ring }] do Intro tao
   setMode: (mode, tourStep = 0) => {
     if (mode !== "explore" && document.pointerLockElement) document.exitPointerLock();
-    set({ mode, tourStep, menuOpen: false, mapOpen: false, adminOpen: false, infoOpen: false });
+    set({ mode, tourStep, menuOpen: false, mapOpen: false, adminOpen: false, infoOpen: false, pickerOpen: false, flying: false });
   },
   setTourStep: (tourStep) => set({ tourStep }),
   setTourStops: (tourStops) => set({ tourStops }),
@@ -45,7 +45,8 @@ export const useGame = create((set, get) => ({
   camBlockers: [],        // mesh toa nha de camera khong xuyen qua
   currentZone: null,      // ten BLD_ dang dung gan
   visited: {},            // { BLD_A: true, ... }
-  setWorld: (spawn, buildings, camBlockers = []) => set({ spawn, buildings, camBlockers }),
+  camGround: [],          // mesh mat dat, chan camera khi ngo len
+  setWorld: (spawn, buildings, camBlockers = [], camGround = []) => set({ spawn, buildings, camBlockers, camGround }),
   zones: [],              // [{ name: "BLD_A", obj: "ZONE_A", inv: Matrix4, box: Box3, volume }] tu Blender
   items: [],              // [{ id: "ITEM_000", quest, pos: [x,y,z] }] tu Blender
   setGameplay: (zones, items) => set({ zones, items }),
@@ -65,10 +66,11 @@ export const useGame = create((set, get) => ({
   mapOpen: false,         // ban do lon (M)
   infoOpen: false,        // the thong tin toa nha (E)
   adminOpen: false,
+  pickerOpen: false,      // bang chon nhan vat
   setUi: (patch) => set(patch),
   anyOverlay: () => {
     const s = get();
-    return s.menuOpen || s.mapOpen || s.adminOpen;
+    return s.menuOpen || s.mapOpen || s.adminOpen || s.pickerOpen;
   },
 
   // ---- Camera / dieu khien ----
@@ -76,6 +78,7 @@ export const useGame = create((set, get) => ({
   setShiftLock: (shiftLock) => set({ shiftLock }),
   viewMode: "third",      // third | first
   setViewMode: (viewMode) => set({ viewMode }),
+  flying: false,          // che do bay
   runToggled: false,      // trang thai chay khi dung che do bam-de-bat/tat
   setRunToggled: (runToggled) => set({ runToggled }),
 
