@@ -28,11 +28,13 @@ THIN = 1.0         # m, bo dai mong hon 2*THIN (ban cong, mai hat)
 INSET = 0.3        # m, lui vao sau mat tuong
 GAP = 1.5          # m, bit khe tuong rong toi 2*GAP (cua, tang tret trong) truoc khi lay phan ben trong
 # rieng tung toa: bit ca cho lom sau (B: hanh lang ban cong giua cac khoi nho, mat truoc ho -> nhin tu tren thanh ho sau)
-CLOSE = {"VIS_B": 4.0}
+CLOSE = {}  # (B: bit cho lom bang dong hinh thai lam loi loi ra mat bac, che cua so - da tat)
 # rieng tung toa: bo cac muc mai thap hon (m) - B: muc 2,0/2,7/3,4 xep thanh bac, nhan vat leo len mai duoc
 MIN_LEVEL = {"VIS_B": 4.0}
 # rieng tung toa: lap cho lom trong tren cao (MyUIT de trong tu chan len troi) - gia tri = m lui vao o mat ngoai
-NOTCH = {}  # (B: thu lap cho lom bi sai, da tat)
+NOTCH = {}  # (B: lap cho lom bi sai, chu du an bo; B giu nguyen vo MyUIT, loi an tren web)
+# chi lap cho lom o nua phia nam (phia san); mat bac B khong co ho, lap nham se de len cua so
+NOTCH_SOUTH = {"VIS_B"}
 DARK_MAT = "M07_Charcoal_Gleam"  # vat lieu tuong hanh lang trong cho lom
 SIMPLIFY = 0.3     # m, sai lech toi da khi lam tron duong vien
 MIN_LEVEL_AREA = 25.0
@@ -193,7 +195,7 @@ def extrude(bm, m, z0, top, lo):
         off += k
 
 
-def fill_notches(bm, masks, base, lo, setback):
+def fill_notches(bm, masks, base, lo, setback, H, south=False):
     """Lap cho lom hep (< ~12 m) giua cac khoi: cao bang khoi thap hon ben canh, chua lui `setback` m o mat ngoai."""
     U = np.zeros_like(masks[0][1])
     Ht = np.zeros(U.shape)
@@ -202,7 +204,7 @@ def fill_notches(bm, masks, base, lo, setback):
     c = int(6.0 / R)  # lom rong toi ~12 m
     closed = erode(dilate(U, c), c)
     front = dilate(~closed, int(setback / R))
-    notch = closed & ~U & ~front
+    notch = closed & ~U & ~front & (H < 6.0)  # chi cho trong that (phia tren khong co mai/san MyUIT) -> khong de len cua so
     corridor = closed & ~U & front  # dai hanh lang truoc khoi lap: san tung tang + lan can
     # gan nhan tung cho lom
     lab = np.zeros(U.shape, int); k = 0
@@ -215,29 +217,19 @@ def fill_notches(bm, masks, base, lo, setback):
             for y, x in ((a + 1, b), (a - 1, b), (a, b + 1), (a, b - 1)):
                 if 0 <= y < U.shape[0] and 0 <= x < U.shape[1] and notch[y, x] and not lab[y, x]:
                     lab[y, x] = k; st.append((y, x))
+    ymid = np.nonzero(U)[0].mean()
     for n in range(1, k + 1):
         comp = lab == n
+        if south and np.nonzero(comp)[0].mean() > ymid:
+            continue
         if comp.sum() * R * R < 10:
             continue
         ring = dilate(comp, int(1.0 / R)) & U
         if not ring.any():
             continue
         top = float(np.percentile(Ht[ring], 20))
-        n0 = len(bm.faces)
-        extrude(bm, comp, base, top, lo)
-        bm.faces.ensure_lookup_table()
-        for f in bm.faces[n0:]:
-            f.material_index = 1  # mat tuong hanh lang: mau toi
-        # hanh lang truoc khoi lap: san moi tang 3,5 m + lan can o mep ngoai
-        cor = corridor & dilate(comp, int((setback + 0.5) / R))
-        rail = cor & dilate(~closed, 1)
-        z = base + 3.5
-        while z < top - 1.0:
-            extrude(bm, cor, z - 0.25, z, lo)
-            extrude(bm, rail, z, z + 1.0, lo)
-            z += 3.5
-        extrude(bm, cor, top - 0.3, top, lo)  # mai hanh lang
-        log(f"  lap cho lom {comp.sum() * R * R:.0f} m2, cao {top:.1f} m, hanh lang {cor.sum() * R * R:.0f} m2")
+        extrude(bm, comp, base, top, lo)  # tuong kin, cung mau tuong toa (chu du an: "cho lom thi dung tuong len")
+        log(f"  lap cho lom {comp.sum() * R * R:.0f} m2, cao {top:.1f} m")
 
 
 def build_core(V):
@@ -295,7 +287,7 @@ def build_core(V):
             off += k
     nf = NOTCH.get(V.name)
     if nf and masks:
-        fill_notches(bm, masks, base, lo, nf)
+        fill_notches(bm, masks, base, lo, nf, H, V.name in NOTCH_SOUTH)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     name = V.name + "_core"
     old = bpy.data.objects.get(name)

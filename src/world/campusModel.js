@@ -87,6 +87,8 @@ export function splitScene(scene) {
   // (khop voi tuong nhin thay, thay cho than BLD_ von lech vai met).
   const hidden = new THREE.MeshBasicMaterial({ visible: false });
   const isCore = (o) => /^VIS_.*_core$/.test(o.name);
+  // loi an di (chi va cham): vo MyUIT cua toa nay da kin, hien loi se de len cua so/ban cong
+  const HIDE_CORE = new Set(["VIS_B_core"]);
   const isVis = (o) => o.name.startsWith("VIS_") && !isCore(o);
   const underCore = (m, root) => {
     for (let p = m; p && p !== root; p = p.parent) if (isCore(p)) return true;
@@ -96,7 +98,15 @@ export function splitScene(scene) {
     .filter((o) => o.name.startsWith("BLD_") && o.children.some(isVis))
     .forEach((o) => {
       if (o.isMesh) o.material = hidden;
-      else o.children.forEach((m) => m.isMesh && !isVis(m) && !isCore(m) && !m.name.startsWith("DET_") && (m.material = hidden));
+      else
+        o.children.forEach(
+          (m) =>
+            m.isMesh &&
+            !isVis(m) &&
+            (!isCore(m) || HIDE_CORE.has(m.name)) &&
+            !m.name.startsWith("DET_") &&
+            (m.material = hidden),
+        );
     });
 
   const buildings = scene.children
