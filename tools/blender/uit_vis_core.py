@@ -32,7 +32,8 @@ CLOSE = {"VIS_B": 4.0}
 # rieng tung toa: bo cac muc mai thap hon (m) - B: muc 2,0/2,7/3,4 xep thanh bac, nhan vat leo len mai duoc
 MIN_LEVEL = {"VIS_B": 4.0}
 # rieng tung toa: lap cho lom trong tren cao (MyUIT de trong tu chan len troi) - gia tri = m lui vao o mat ngoai
-NOTCH = {"VIS_B": 1.5}
+NOTCH = {}  # (B: thu lap cho lom bi sai, da tat)
+DARK_MAT = "M07_Charcoal_Gleam"  # vat lieu tuong hanh lang trong cho lom
 SIMPLIFY = 0.3     # m, sai lech toi da khi lam tron duong vien
 MIN_LEVEL_AREA = 25.0
 
@@ -200,7 +201,9 @@ def fill_notches(bm, masks, base, lo, setback):
         U |= m; Ht[m] = np.maximum(Ht[m], top)
     c = int(6.0 / R)  # lom rong toi ~12 m
     closed = erode(dilate(U, c), c)
-    notch = closed & ~U & ~dilate(~closed, int(setback / R))
+    front = dilate(~closed, int(setback / R))
+    notch = closed & ~U & ~front
+    corridor = closed & ~U & front  # dai hanh lang truoc khoi lap: san tung tang + lan can
     # gan nhan tung cho lom
     lab = np.zeros(U.shape, int); k = 0
     for j, i in zip(*np.nonzero(notch)):
@@ -220,8 +223,21 @@ def fill_notches(bm, masks, base, lo, setback):
         if not ring.any():
             continue
         top = float(np.percentile(Ht[ring], 20))
+        n0 = len(bm.faces)
         extrude(bm, comp, base, top, lo)
-        log(f"  lap cho lom {comp.sum() * R * R:.0f} m2, cao {top:.1f} m")
+        bm.faces.ensure_lookup_table()
+        for f in bm.faces[n0:]:
+            f.material_index = 1  # mat tuong hanh lang: mau toi
+        # hanh lang truoc khoi lap: san moi tang 3,5 m + lan can o mep ngoai
+        cor = corridor & dilate(comp, int((setback + 0.5) / R))
+        rail = cor & dilate(~closed, 1)
+        z = base + 3.5
+        while z < top - 1.0:
+            extrude(bm, cor, z - 0.25, z, lo)
+            extrude(bm, rail, z, z + 1.0, lo)
+            z += 3.5
+        extrude(bm, cor, top - 0.3, top, lo)  # mai hanh lang
+        log(f"  lap cho lom {comp.sum() * R * R:.0f} m2, cao {top:.1f} m, hanh lang {cor.sum() * R * R:.0f} m2")
 
 
 def build_core(V):
@@ -288,6 +304,8 @@ def build_core(V):
     cm = bpy.data.meshes.new(name); bm.to_mesh(cm); bm.free()
     if wall_mat:
         cm.materials.append(wall_mat)
+        if nf and bpy.data.materials.get(DARK_MAT):
+            cm.materials.append(bpy.data.materials[DARK_MAT])
     B = V.parent
     ob = bpy.data.objects.new(name, cm)
     for col in V.users_collection:
