@@ -514,6 +514,38 @@ def xuat(gioi):
         s = tr.strips.new(n, 0, a)
         if len(a.slots):
             s.action_slot = a.slots[0]
+    # moi vat lieu mot mau tron -> ghi mau vao dinh roi dung chung mot vat lieu (it lenh ve); chi giu rieng vat lieu co anh
+    chung = bpy.data.materials.new("NV_mau")
+    chung.use_nodes = True
+    nut = chung.node_tree.nodes.new("ShaderNodeVertexColor")
+    nut.layer_name = "Mau"
+    bsdf(chung).inputs["Roughness"].default_value = 0.85
+    chung.node_tree.links.new(nut.outputs["Color"], bsdf(chung).inputs["Base Color"])
+    for o in con:
+        if o.type != "MESH":
+            continue
+        me = o.data
+        cu = list(me.materials)
+        co_anh = [m is not None and any(n.type == "TEX_IMAGE" for n in m.node_tree.nodes) for m in cu]
+        if any(co_anh):
+            continue
+        mau_cu = []
+        for p_ in me.polygons:
+            s_ = bsdf(cu[p_.material_index]).inputs["Base Color"]
+            if s_.is_linked:  # quan nam goc to mau qua nut tron: da duoc thay mau o to_mau
+                raise RuntimeError("vat lieu con lien ket mau: " + cu[p_.material_index].name)
+            mau_cu.append(tuple(s_.default_value))
+        for a in list(me.color_attributes):
+            me.color_attributes.remove(a)
+        lop = me.color_attributes.new("Mau", "BYTE_COLOR", "CORNER")
+        for p_ in me.polygons:
+            for li in p_.loop_indices:
+                lop.data[li].color = mau_cu[p_.index]
+        me.color_attributes.active_color = lop
+        me.materials.clear()
+        me.materials.append(chung)
+        for p_ in me.polygons:
+            p_.material_index = 0
     # gop moi luoi (tru toc dai) thanh mot de bot lan ve
     gop = [o for o in con if o.type == "MESH" and not o.name.startswith("ToDai")]
     bpy.ops.object.select_all(action="DESELECT")

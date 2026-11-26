@@ -25,8 +25,18 @@ export default function Avatar({ gender = "nam", hair = "ngan", drive }) {
       if (m.map) {
         m.emissiveMap = m.map;
         m.emissive.setScalar(1);
+      } else if (m.vertexColors) {
+        // mau nam o dinh: nhan phan tu sang voi mau dinh
+        m.emissive.setScalar(1);
+        m.onBeforeCompile = (sh) => {
+          sh.fragmentShader = sh.fragmentShader.replace(
+            "#include <emissivemap_fragment>",
+            "#include <emissivemap_fragment>\ntotalEmissiveRadiance *= vColor.rgb;",
+          );
+        };
       } else m.emissive.copy(m.color);
       m.emissiveIntensity = SELF_LIGHT;
+      m.needsUpdate = true; // vat lieu co the da bien dich truoc khi gan onBeforeCompile
     });
   }, [model]);
 

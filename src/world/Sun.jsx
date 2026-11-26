@@ -9,10 +9,21 @@ const CAMPUS_CENTER = [25, 0, 15]; // giua GND_Base (toa do three; Blender x -20
 // Mat troi + bong do.
 // follow (che do kham pha): vung bong nho quanh nhan vat, di theo nhan vat -> cung kich thuoc shadow map
 // ma bong sac hon nhieu lan. Khong follow (trang chu, tham quan): vung bong phu ca khuon vien.
-export default function Sun({ shadows, mapSize, follow, color = LIGHT.sunColor, intensity = LIGHT.sunIntensity }) {
+// light (dien thoai): vung bong hep hon (bu anh bong nho), chi ve lai bong cach mot khung hinh
+export default function Sun({ shadows, mapSize, follow, light: lite, color = LIGHT.sunColor, intensity = LIGHT.sunIntensity }) {
   const light = useRef();
   const scene = useThree((s) => s.scene);
-  const R = follow ? 60 : 260;
+  const R = follow ? (lite ? 45 : 60) : 260;
+  const gl = useThree((s) => s.gl);
+  const frame = useRef(0);
+
+  useEffect(() => {
+    if (!lite) return;
+    gl.shadowMap.autoUpdate = false;
+    return () => {
+      gl.shadowMap.autoUpdate = true;
+    };
+  }, [gl, lite]);
 
   // target cua directionalLight phai nam trong scene thi moi cap nhat vi tri
   useEffect(() => {
@@ -22,6 +33,7 @@ export default function Sun({ shadows, mapSize, follow, color = LIGHT.sunColor, 
   }, [scene, follow, mapSize]);
 
   useFrame(() => {
+    if (lite && frame.current++ % 2 === 0) gl.shadowMap.needsUpdate = true;
     const L = light.current;
     let [cx, , cz] = CAMPUS_CENTER;
     if (follow) {
@@ -36,7 +48,7 @@ export default function Sun({ shadows, mapSize, follow, color = LIGHT.sunColor, 
 
   return (
     <directionalLight
-      key={`${mapSize}-${follow}`}
+      key={`${mapSize}-${follow}-${R}`}
       ref={light}
       intensity={intensity}
       color={color}

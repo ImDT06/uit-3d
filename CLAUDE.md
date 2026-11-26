@@ -78,6 +78,9 @@ tách thành object, không dời/uốn đỉnh, không thêm khối nhìn thấ
 - `world/Effects.jsx` (N8AO, bloom, khử răng cưa; `@react-three/postprocessing`): chỉ chất lượng Cao, không bật trên
   màn hình cảm ứng; `?fx=0|1` tắt / ép bật. Tải riêng khi bật (trang chủ, tham quan chưa dùng).
 
+- Điện thoại (màn cảm ứng): chế độ Tự động không lên Cao, ảnh bóng 1024, vùng bóng 45 m, vẽ lại bóng cách khung
+  (`App.jsx`, `Sun.jsx`).
+
 ## Nhân vật
 
 - `public/models/nv_nam.glb`, `nv_nu.glb`: dựng từ bộ Ultimate Modular Men/Women của Quaternius + đồng phục UIT

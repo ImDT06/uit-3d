@@ -33,6 +33,8 @@ const QUALITY = {
 // Hieu ung hinh anh (world/Effects.jsx): chi o chat luong Cao tren may co chuot; ?fx=0 tat, ?fx=1 ep bat
 const fxParam = new URLSearchParams(window.location.search).get("fx");
 const coarse = window.matchMedia("(pointer: coarse)").matches;
+// Man hinh cam ung: anh bong nho hon (ve lai bong chiem phan lon khoi luong), che do Tu dong khong len muc Cao
+const MOBILE_MAP = 1024;
 
 // Bat loi khi chua co file mo hinh
 class ModelErrorBoundary extends Component {
@@ -78,7 +80,7 @@ export default function App() {
   const quality = useSettings((s) => s.quality);
   const [autoLevel, setAutoLevel] = useState("medium");
   const level = quality === "auto" ? autoLevel : quality;
-  const q = QUALITY[level];
+  const q = coarse ? { ...QUALITY[level], mapSize: Math.min(QUALITY[level].mapSize, level === "high" ? 2048 : MOBILE_MAP) } : QUALITY[level];
   const effects = fxParam ? fxParam === "1" : level === "high" && !coarse;
   useHotkeys();
 
@@ -113,7 +115,7 @@ export default function App() {
           {/* che do Tu dong: may chay muot thi tang, giat thi giam chat luong */}
           {quality === "auto" && (
             <PerformanceMonitor
-              onIncline={() => setAutoLevel((l) => (l === "low" ? "medium" : "high"))}
+              onIncline={() => setAutoLevel((l) => (l === "low" || coarse ? "medium" : "high"))}
               onDecline={() => setAutoLevel((l) => (l === "high" ? "medium" : "low"))}
               flipflops={3}
             />
@@ -121,7 +123,7 @@ export default function App() {
           {/* trang chu: nen trong suot (nen CSS phia sau), khong suong mu; vao tham quan thi troi/suong mu hien dan */}
           <Atmosphere on={mode !== "intro" || !!previewName} fog={!previewName} />
           <hemisphereLight args={LIGHT.hemi} />
-          <Sun shadows={q.shadows} mapSize={q.mapSize} follow={explore} />
+          <Sun shadows={q.shadows} mapSize={q.mapSize} follow={explore} light={coarse} />
           <Suspense fallback={null}>
             {previewName ? <BuildingPreview name={previewName} /> : explore ? <Explore effects={effects} /> : <IntroScene />}
           </Suspense>
