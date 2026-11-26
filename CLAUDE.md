@@ -76,6 +76,8 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
     trên đất. Bản ép phẳng cũ: `GND_myuit_phang`, `GND_congA_phang` (VIS_BACKUP). Cắt theo khung `GND_Base`.
     Đồ vật cao (> 1,5 m: mái che, giàn hoa, đèn, cột) trong `PROP_myuit` không uốn: mỗi cụm dời + xoay nguyên khối theo phép uốn
     tại tâm cụm (giữ đúng hình MyUIT); đồ thấp bám đất (bồn cây, bờ, bậc, ghế) vẫn uốn theo mặt đất. Bản uốn cũ: `PROP_myuit_uon`.
+    `GND_bac`: cầu thang dựng thêm (rộng 3 m, bậc ~0,16 m) lên khu sân bóng rổ/bóng chuyền phía bắc nhà ăn (nền cao 1,9 m,
+    chủ dự án xác nhận cao thật); vị trí chọn tự động ở mép có đất trống phẳng, ưu tiên phía hướng vào trường.
     `GND_lap`: miếng vá lỗ thủng (< 3 m) trên sân nâng (chỗ đã xóa bồn cây/cây), độ cao + vật liệu lấy từ xung quanh.
     Mặt đất để shading phẳng (flat); tòa/đồ vật MyUIT: cạnh gấp > 30° sắc (smooth toàn bộ làm tam giác dài bị loang tối).
     Cây: `CAY_myuit` (mesh gộp mọi cây MyUIT, chỉ hiển thị) + `CAY_###` (empty ở gốc, web dựng trụ va chạm như `TREE_*`).
