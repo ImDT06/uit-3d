@@ -71,12 +71,17 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
     `PROP_myuit` (giàn hoa, ghế, đèn, mái che, lưới sân; đã bỏ cây). Hai object này được "uốn" (thin-plate spline) theo
     điểm neo = góc các tòa (vị trí MyUIT → mặt bằng OSM), nên lối đi bám theo tòa; đường chính OSM `PATH_Road` vẫn giữ
     (bên trong khuôn viên bị `GND_myuit` phủ; đường nam C đã kéo thêm bằng phép uốn thứ hai về tâm y ≈ −79,5, khớp ảnh vệ tinh).
-    Mặt đất MyUIT gốc cao 0,57 m → đã hạ; các tấm đất nâng/sườn dốc của họ cũng ép phẳng; cắt theo khung `GND_Base`.
+    Mặt đất MyUIT gốc cao 0,57 m → hạ cả khối 0,37 m (đất thường ≈ 0,2 m), **giữ nguyên độ cao thật** của sân nâng
+    (sân B–C ≈ 1,2 m...; chủ dự án xác nhận trường mới xây lại, MyUIT đúng). Đồ vật `PROP_*` hạ cùng mức nên đứng đúng
+    trên đất. Bản ép phẳng cũ: `GND_myuit_phang`, `GND_congA_phang` (VIS_BACKUP). Cắt theo khung `GND_Base`.
+    `GND_lap`: miếng vá lỗ thủng (< 3 m) trên sân nâng (chỗ đã xóa bồn cây/cây), độ cao + vật liệu lấy từ xung quanh.
+    Mặt đất để shading phẳng (flat); tòa/đồ vật MyUIT: cạnh gấp > 30° sắc (smooth toàn bộ làm tam giác dài bị loang tối).
     Cây: `CAY_myuit` (mesh gộp mọi cây MyUIT, chỉ hiển thị) + `CAY_###` (empty ở gốc, web dựng trụ va chạm như `TREE_*`).
     Có `CAY_*` thì `uit_detail.py` không trồng cây tự động; `TREE_*` cũ trong khuôn viên đã cất vào `VIS_BACKUP`.
     Lớp đất cũ (`GND_Green/Pitch`, `PATH_Footway/Road`) đã cắt phần nằm dưới `GND_myuit` (bản gốc: `*_goc` trong `VIS_BACKUP`).
-    Lõi đặc `VIS_<tòa>_core` (script `uit_vis_core.py`): khối lùi sau mặt tường VIS_ ~1 m, theo từng mức mái; web dùng lõi
-    làm khối va chạm + chắn camera (thay thân `BLD_`). Sửa/thay `VIS_` thì chạy lại script này.
+    Lõi đặc `VIS_<tòa>_core` (script `uit_vis_core.py`): khối ngay sau mặt tường VIS_ (~0,3 m), theo từng mức mái; lấy theo
+    vùng tường bao (bịt khe < 3 m: cửa, tầng trệt trống), không theo mép sàn (sàn/mái hiên nhô ra sẽ che cửa sổ).
+    Web **hiện** lõi (bịt chỗ nhìn xuyên) và dùng nó làm khối va chạm + chắn camera (thay thân `BLD_`). Sửa/thay `VIS_` thì chạy lại script này.
     Cổng A: chủ dự án xác nhận cổng cũ (`GATE_*`, biến `GATE`) sai → dùng cụm cổng MyUIT (`GND_congA`, `PROP_congA`,
     `CAY_congA`: sân hoa văn mạch điện, hàng cờ, chữ UIT), chỉ dời + xoay (−14°) chứ không uốn để khỏi méo;
     `uit_detail.py` bỏ qua cổng cũ khi có `PROP_congA`. Tour: `GATE_POS` trong `IntroScene.jsx`.

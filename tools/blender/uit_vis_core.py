@@ -2,13 +2,16 @@
 UIT 3D - Lop loi dac cho toa VIS_* (mo hinh lay tu ban MyUIT)
 ================================================================
 Toa VIS_* chi la vo mong (san la tam phang, tuong tung mang roi, tang tret rong) nen nhin nhu giay.
-Script nay dung them VIS_<toa>_core: khoi dac lui vao sau mat tuong ~1 m, cao toi ngay duoi tung muc mai.
+Script nay dung them VIS_<toa>_core: khoi dac ngay sau mat tuong (~0,3 m), cao toi ngay duoi tung muc mai.
+Web hien lop loi nay (bit tang tret trong, khe cua) va dung no lam khoi va cham.
 
 Cach lam (moi toa):
-  1. Ban do do cao nhin tu tren xuong (o 0,4 m) tu cac mat ngang cao > 2 m cua VIS_.
+  1. Ban do do cao nhin tu tren xuong (o 0,25 m) tu cac mat ngang cao > 2 m cua VIS_.
   2. Gom cac muc mai (dien tich >= 25 m2).
-  3. Moi muc: bo dai mong < 5 m (ban cong, mai hat) bang mo/dong hinh thai, roi thu vao 1 m.
-  4. Do duong vien, lam tron (sai lech < 0,45 m), dun len thanh khoi bac thang.
+  3. Moi muc: vung mai (bo dai mong < 2 m) GIAO vung tuong bao: ve cac mat dung trong khoang cao do xuong
+     mat bang, bit khe < ~3 m (cua, tang tret trong), lay phan ben trong. San/mai hien nho ra ngoai tuong
+     nen khong lay theo mep san (se che mat cua so). Roi thu vao INSET.
+  4. Do duong vien, lam tron (sai lech < 0,3 m), dun len thanh khoi bac thang.
 Chay lai duoc: tu xoa VIS_*_core cu. Vat lieu tuong = vat lieu mat dung nhieu nhat cua toa.
 Web (campusModel.js): co VIS_*_core thi dung no lam khoi va cham + chan camera thay cho than BLD_.
 """
@@ -20,10 +23,11 @@ import bpy
 import mathutils
 import numpy as np
 
-R = 0.4            # m, kich thuoc o ban do do cao
-THIN = 2.5         # m, bo dai mong hon 2*THIN
-INSET = 1.0        # m, lui vao sau mat tuong
-SIMPLIFY = 0.45    # m, sai lech toi da khi lam tron duong vien
+R = 0.25           # m, kich thuoc o ban do do cao
+THIN = 1.0         # m, bo dai mong hon 2*THIN (ban cong, mai hat)
+INSET = 0.3        # m, lui vao sau mat tuong
+GAP = 1.5          # m, bit khe tuong rong toi 2*GAP (cua, tang tret trong) truoc khi lay phan ben trong
+SIMPLIFY = 0.3     # m, sai lech toi da khi lam tron duong vien
 MIN_LEVEL_AREA = 25.0
 
 
@@ -107,12 +111,36 @@ def heightmap(V):
         d3 = (gx - p[0]) * (r[1] - p[1]) - (r[0] - p[0]) * (gy - p[1])
         ins = ~(((d1 < 0) | (d2 < 0) | (d3 < 0)) & ((d1 > 0) | (d2 > 0) | (d3 > 0)))
         sub = H[y0:y1, x0:x1]; sub[ins] = np.maximum(sub[ins], zc[i])
-    return H, lo, float(co[:, 2].min()), wall_mat
+    w = (nz < 0.2) & (ar > 0.05)
+    walls = np.stack([a[w], b[w], c[w]], 1)  # (n, 3 dinh, xyz)
+    return H, lo, float(co[:, 2].min()), wall_mat, walls
+
+
+def wall_inside(walls, zlo, zhi, shape, lo):
+    """Vung nam trong tuong bao (cac mat dung cat qua khoang cao zlo..zhi), da bit khe < 2*GAP."""
+    zmin, zmax = walls[:, :, 2].min(1), walls[:, :, 2].max(1)
+    sel = walls[(zmin < zhi) & (zmax > zlo)]
+    Wm = np.zeros(shape, bool)
+    for T in sel:
+        for p, q in ((T[0], T[1]), (T[1], T[2]), (T[2], T[0])):
+            k = int(np.hypot(*(q[:2] - p[:2])) / (R / 2)) + 2
+            t = np.linspace(0, 1, k)[:, None]
+            ij = ((p[:2] + (q[:2] - p[:2]) * t - lo) / R).astype(int)
+            Wm[ij[:, 1].clip(0, shape[0] - 1), ij[:, 0].clip(0, shape[1] - 1)] = True
+    G = int(GAP / R)
+    free = ~dilate(Wm, G)
+    out = np.zeros(shape, bool); out[0, :] = out[-1, :] = out[:, 0] = out[:, -1] = True; out &= free
+    while True:
+        n = dilate(out, 1) & free
+        if n.sum() == out.sum():
+            break
+        out = n
+    return erode(~out, G)
 
 
 def build_core(V):
     t0 = time.time()
-    H, lo, base, wall_mat = heightmap(V)
+    H, lo, base, wall_mat, walls = heightmap(V)
     vals = np.sort(H[H > 0])[::-1]
     levels = []
     for v in vals:
@@ -123,7 +151,9 @@ def build_core(V):
     K, INS = int(THIN / R), int(INSET / R)
     masks = []
     for L in levels:
-        m = erode(dilate(erode(H >= L - 0.4, K), K), INS)
+        z0 = masks[-1][0] if masks else base
+        roof = erode(dilate(erode(H >= L - 0.4, K), K), 1)
+        m = erode(roof & wall_inside(walls, z0 + 0.3, L - 0.7, H.shape, lo), INS)
         if m.sum() * R * R >= 15:
             masks.append((L - 0.4, m))
     bm = bmesh.new()

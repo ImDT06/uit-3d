@@ -96,7 +96,7 @@ export function splitScene(scene) {
     .filter((o) => o.name.startsWith("BLD_") && o.children.some(isVis))
     .forEach((o) => {
       if (o.isMesh) o.material = hidden;
-      else o.children.forEach((m) => m.isMesh && !isVis(m) && !m.name.startsWith("DET_") && (m.material = hidden));
+      else o.children.forEach((m) => m.isMesh && !isVis(m) && !isCore(m) && !m.name.startsWith("DET_") && (m.material = hidden));
     });
 
   const buildings = scene.children
