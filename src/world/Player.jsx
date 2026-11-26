@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { MeshBVH, acceleratedRaycast } from "three-mesh-bvh";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useKeyboardControls, CameraControlsImpl } from "@react-three/drei";
 import * as THREE from "three";
@@ -23,6 +24,12 @@ const DOUBLE_TAP = 0.3;       // s: go dup phim tien de chay
 const CAM_FOLLOW_DELAY = 1.2; // s: khong cham camera bao lau thi camera tu ve sau lung
 const _zp = new THREE.Vector3();
 const ZONE_MARGIN = 8;        // m: dung cach toa nha bao nhieu thi tinh la "o gan"
+
+const TIGHT_IN = 1.2;         // m: camera gan hon muc nay thi an nhan vat
+const TIGHT_OUT = 1.5;        // m: xa hon muc nay thi hien lai
+const SIDE_MARGIN = 0.3;      // m: khoang cach toi thieu tu camera toi tuong ben (shift lock)
+const side = new THREE.Vector3();
+const sideRay = new THREE.Raycaster();
 
 const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const dz = (v, d = 0.15) => (Math.abs(v) < d ? 0 : (v - Math.sign(v) * d) / (1 - d));
@@ -66,7 +73,9 @@ export default function Player() {
     stepDist: 0,
     lastPos: null,
     pad: [],
+    tight: false,
   });
+  const [tight, setTight] = useState(false);
 
   const first = viewMode === "first";
   const overlay = menuOpen || mapOpen || adminOpen;
@@ -103,6 +112,12 @@ export default function Player() {
 
   // ---- Camera khong xuyen tuong ----
   useEffect(() => {
+    // luoi nhieu mat: lap cay tim kiem (BVH) de do tia nhanh; indirect = khong dao thu tu mat cua luoi goc
+    for (const m of camBlockers) {
+      if (m.geometry.boundsTree || m.geometry.attributes.position.count < 1000) continue;
+      m.geometry.boundsTree = new MeshBVH(m.geometry, { indirect: true });
+      m.raycast = acceleratedRaycast;
+    }
     if (cam.current) cam.current.colliderMeshes = first ? [] : camBlockers;
   }, [camBlockers, spawn, first]);
 
@@ -126,7 +141,7 @@ export default function Player() {
     c.touches.one = A.TOUCH_ROTATE;
     c.touches.two = A.TOUCH_DOLLY;
     c.touches.three = A.NONE;
-    c.setFocalOffset(shiftLock && !first ? SHOULDER_OFFSET : 0, 0, 0, true);
+    // do lech vai khi shift lock duoc cap nhat moi frame (con phai do tuong ben phai)
     ecctrl.current?.setLockForward?.(shiftLock || first);
     if (first) {
       c.minDistance = 0.01;
@@ -308,6 +323,23 @@ export default function Player() {
     const p = c.currPos;
     cc.moveTo(p.x, p.y + (g.viewMode === "first" ? HEAD_HEIGHT : 0.8), p.z, true);
 
+    // camera bi tuong ep sat nhan vat -> an nhan vat (nhin nhu goc thu nhat); 2 nguong lech nhau de khong nhap nhay
+    const isTight = g.viewMode === "third" && cc.distance < (T.tight ? TIGHT_OUT : TIGHT_IN);
+    if (isTight !== T.tight) {
+      T.tight = isTight;
+      setTight(isTight);
+    }
+    // lech vai (shift lock) khong duoc camera-controls kiem tra va cham -> thu lai khi co tuong ben phai
+    let shoulder = g.shiftLock && g.viewMode === "third" && !isTight ? SHOULDER_OFFSET : 0;
+    if (shoulder && cc.colliderMeshes.length) {
+      side.setFromMatrixColumn(state.camera.matrixWorld, 0).normalize();
+      sideRay.set(cc.getTarget(_zp), side);
+      sideRay.far = SHOULDER_OFFSET + SIDE_MARGIN;
+      const hit = sideRay.intersectObjects(cc.colliderMeshes, false)[0];
+      if (hit) shoulder = Math.max(0, hit.distance - SIDE_MARGIN);
+    }
+    cc.setFocalOffset(shoulder, 0, 0, true);
+
     fwd.set(0, 0, 1).applyQuaternion(c.currQuat);
     const speed = c.relativeVelOnPlane ? c.relativeVelOnPlane.length() : 0;
     playerPos.x = p.x;
@@ -406,7 +438,7 @@ export default function Player() {
         accDeltaTime={0.15}
         decDeltaTime={0.12}
       >
-        <Student controller={ecctrl} hidden={first} />
+        <Student controller={ecctrl} hidden={first || tight} />
       </Ecctrl>
       <EcctrlCameraControls
         ref={cam}

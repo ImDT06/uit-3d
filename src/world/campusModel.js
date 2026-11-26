@@ -3,6 +3,7 @@
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 import { LANDMARKS } from "../data/zones";
+import { applyPalette } from "./palette";
 
 // ?model=uit_campus_bakeB: xem thu file glb khac trong public/models (vd ban nuong anh sang dang duyet)
 const altModel = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("model");
@@ -57,6 +58,18 @@ export function splitScene(scene) {
     shadowMat(o);
   });
   scene.updateMatrixWorld(true);
+
+  // ban cat tu MyUIT (co toa trimesh): doi sang bang mau tuoi (palette.js)
+  if (scene.children.some((o) => o.userData.trimesh)) applyPalette(scene);
+
+  // COL_*: khoi chi de va cham (vd bit cua hong chieu nghi toa B), khong hien, khong do bong
+  const colMat = new THREE.MeshBasicMaterial({ visible: false });
+  scene.children
+    .filter((o) => o.name.startsWith("COL_"))
+    .forEach((o) => {
+      o.material = colMat;
+      o.castShadow = o.receiveShadow = false;
+    });
 
   // Du lieu gameplay dung trong Blender (empty, collection Gameplay):
   // ZONE_<toa>: hop vung kich hoat (hop don vi -1..1 da bien doi), key khu vuc = extras.zone hoac BLD_<toa>
@@ -120,8 +133,10 @@ export function splitScene(scene) {
   // Thay bang khoi dac: moi tam giac mat day dung thanh lang tru cao bang toa -> ConvexHullCollider.
   const solids = [];
   const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
+  // BLD_ co custom prop trimesh (toa cat nguyen ban tu MyUIT, vo ho day): giu va cham luoi tam giac nhu mat dat,
+  // khong dung khoi dac (camera van bi chan, xem camBlockers duoi)
   scene.children
-    .filter((o) => o.name.startsWith("BLD_"))
+    .filter((o) => o.name.startsWith("BLD_") && !o.userData.trimesh)
     .map((o) => {
       // rapier chi xet to tien cua mesh: toa la mesh don (1 vat lieu) thi boc vao group
       if (!o.isMesh) return o;
@@ -226,8 +241,10 @@ export function splitScene(scene) {
 
   // luoi chan camera (camera khong xuyen qua toa nha)
   const camBlockers = [];
+  // ban cat tu MyUIT (co toa trimesh): bac ngoi PODIUM_ cung chan camera
+  const cut = scene.children.some((o) => o.userData.trimesh);
   scene.children
-    .filter((o) => o.name.startsWith("BLD_"))
+    .filter((o) => o.name.startsWith("BLD_") || (cut && o.name.startsWith("PODIUM_")))
     .forEach((o) => {
       // co loi VIS_*_core: chan camera bang loi (khop tuong nhin thay); khong thi bang than BLD_ (bo qua luoi VIS_ nang)
       const cores = [];

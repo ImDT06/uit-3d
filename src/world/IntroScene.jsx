@@ -80,7 +80,7 @@ function makeStops(buildings, bounds) {
 }
 
 // Vong sang nhap nho duoi chan toa dang tham quan
-function Ring({ x, z, r, visible }) {
+function Ring({ x, y = 0.35, z, r, visible }) {
   const ref = useRef();
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
@@ -90,7 +90,7 @@ function Ring({ x, z, r, visible }) {
     ref.current.material.opacity = 0.55 + 0.25 * Math.sin(t * 3);
   });
   return (
-    <mesh ref={ref} position={[x, 0.35, z]} rotation-x={-Math.PI / 2} visible={visible}>
+    <mesh ref={ref} position={[x, y, z]} rotation-x={-Math.PI / 2} visible={visible}>
       <ringGeometry args={[r, r + 1.4, 72]} />
       <meshBasicMaterial color="#ffd23f" transparent depthWrite={false} />
     </mesh>
@@ -187,6 +187,8 @@ export default function IntroScene() {
 
   const hoverB = hover && buildings.find((b) => b.name === hover);
   const ring = mode === "tour" ? stops[step]?.ring : null;
+  // ban cat tu MyUIT: san quanh toa cao toi 2,26 m, vong sang de thap thi chim duoi dat
+  const ringY = buildings.some((b) => scene.getObjectByName(b.name)?.userData.trimesh) ? 2.4 : undefined;
 
   return (
     <>
@@ -227,7 +229,7 @@ export default function IntroScene() {
       </mesh>
 
       {/* luon gan (chi an/hien) de shader duoc bien dich san o trang chu */}
-      <Ring x={ring?.x ?? 0} z={ring?.z ?? 0} r={ring?.r ?? 10} visible={!!ring} />
+      <Ring x={ring?.x ?? 0} y={ringY} z={ring?.z ?? 0} r={ring?.r ?? 10} visible={!!ring} />
 
       {hoverB && (
         <Html position={hoverB.center} center zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
