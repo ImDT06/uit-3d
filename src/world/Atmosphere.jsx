@@ -57,7 +57,7 @@ export default function Atmosphere({ on, fog = true }) {
   return (
     <>
       {fog && <fog ref={fogRef} attach="fog" args={[SKY_COLOR, 3000, 6000]} />}
-      <Sky ref={sky} sunPosition={LIGHT.skySun} />
+      <Sky ref={sky} sunPosition={LIGHT.skySun} {...LIGHT.sky} />
     </>
   );
 }

@@ -72,6 +72,12 @@ tách thành object, không dời/uốn đỉnh, không thêm khối nhìn thấ
 - Màu đổi trên web theo tên vật liệu: `src/world/palette.js` (`?mau=goc` xem màu gốc). Không tự tô thêm họa tiết.
 - Chưa có `ITEM_*` (điểm vật phẩm nhiệm vụ). Chưa đo FPS trên điện thoại.
 
+## Đồ họa
+
+- Ánh sáng mặc định `thap` (nắng thấp, chủ dự án chọn) trong `world/lighting.js`; `?nang=tuoi|sang|trua|chieu` để so.
+- `world/Effects.jsx` (N8AO, bloom, khử răng cưa; `@react-three/postprocessing`): chỉ chất lượng Cao, không bật trên
+  màn hình cảm ứng; `?fx=0|1` tắt / ép bật. Tải riêng khi bật (trang chủ, tham quan chưa dùng).
+
 ## Nhân vật
 
 - `public/models/nv_nam.glb`, `nv_nu.glb`: dựng từ bộ Ultimate Modular Men/Women của Quaternius + đồng phục UIT

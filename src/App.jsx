@@ -30,6 +30,10 @@ const QUALITY = {
   high: { dpr: Math.min(window.devicePixelRatio || 1, 2), shadows: true, mapSize: 4096 },
 };
 
+// Hieu ung hinh anh (world/Effects.jsx): chi o chat luong Cao tren may co chuot; ?fx=0 tat, ?fx=1 ep bat
+const fxParam = new URLSearchParams(window.location.search).get("fx");
+const coarse = window.matchMedia("(pointer: coarse)").matches;
+
 // Bat loi khi chua co file mo hinh
 class ModelErrorBoundary extends Component {
   state = { error: null };
@@ -73,7 +77,9 @@ export default function App() {
   const binds = useSettings((s) => s.binds);
   const quality = useSettings((s) => s.quality);
   const [autoLevel, setAutoLevel] = useState("medium");
-  const q = QUALITY[quality === "auto" ? autoLevel : quality];
+  const level = quality === "auto" ? autoLevel : quality;
+  const q = QUALITY[level];
+  const effects = fxParam ? fxParam === "1" : level === "high" && !coarse;
   useHotkeys();
 
   // o trang chu/tham quan: doi trang yen roi tai ngam phan kham pha
@@ -117,7 +123,7 @@ export default function App() {
           <hemisphereLight args={LIGHT.hemi} />
           <Sun shadows={q.shadows} mapSize={q.mapSize} follow={explore} />
           <Suspense fallback={null}>
-            {previewName ? <BuildingPreview name={previewName} /> : explore ? <Explore /> : <IntroScene />}
+            {previewName ? <BuildingPreview name={previewName} /> : explore ? <Explore effects={effects} /> : <IntroScene />}
           </Suspense>
         </Canvas>
         {previewName ? (

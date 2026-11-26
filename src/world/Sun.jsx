@@ -50,6 +50,7 @@ export default function Sun({ shadows, mapSize, follow, color = LIGHT.sunColor, 
       shadow-camera-far={500}
       shadow-bias={-0.0002}
       shadow-normalBias={follow ? 0.03 : 0.3}
+      shadow-radius={LIGHT.shadowRadius ?? 1} // mep bong mem
     />
   );
 }

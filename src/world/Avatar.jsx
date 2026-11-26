@@ -6,6 +6,8 @@ import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
 // Mo hinh nhan vat (public/models/nv_nam.glb, nv_nu.glb, dung bang tools/blender/uit_nhanvat.py).
 // Chan o y = 0, cao ~1,85 m, mat nhin ve +Z. Toc dai la object ToDai (chi ban nu).
 // drive(actions, dt): moi frame chinh trong so cac dong tac; bo trong thi chi dung yen.
+const SELF_LIGHT = 0.16;
+
 export default function Avatar({ gender = "nam", hair = "ngan", drive }) {
   const { scene, animations } = useGLTF(`${import.meta.env.BASE_URL}models/nv_${gender}.glb`);
   const model = useMemo(() => clone(scene), [scene]);
@@ -18,6 +20,13 @@ export default function Avatar({ gender = "nam", hair = "ngan", drive }) {
       if (!o.isMesh) return;
       o.castShadow = true;
       o.frustumCulled = false; // luoi co xuong: hop bao tinh theo tu the goc, de bi cat nham
+      // tu sang nhe theo mau cua chinh no: nguoc nang mat khong bi toi om
+      const m = o.material;
+      if (m.map) {
+        m.emissiveMap = m.map;
+        m.emissive.setScalar(1);
+      } else m.emissive.copy(m.color);
+      m.emissiveIntensity = SELF_LIGHT;
     });
   }, [model]);
 
