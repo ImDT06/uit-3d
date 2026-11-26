@@ -9,7 +9,8 @@ export default function IntroUi() {
   const stops = useGame((s) => s.tourStops);
   const setMode = useGame((s) => s.setMode);
   const setStep = useGame((s) => s.setTourStep);
-  const zoneCount = Object.keys(ZONES).length;
+  // chi dem cac toa co trong mo hinh (moi toa la mot diem tham quan); mo hinh chua tai xong thi de trong
+  const zoneCount = stops.filter((s) => ZONES[s.key]).length || "…";
 
   // phim tat: Enter bat dau / tiep, mui ten chuyen diem, Esc quay lai
   useEffect(() => {

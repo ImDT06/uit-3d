@@ -7,7 +7,7 @@ import { applyPalette } from "./palette";
 
 // ?model=uit_campus_bakeB: xem thu file glb khac trong public/models (vd ban nuong anh sang dang duyet)
 const altModel = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("model");
-export const MODEL_URL = altModel && /^[\w-]+$/.test(altModel) ? `/models/${altModel}.glb` : "/models/uit_campus.glb";
+export const MODEL_URL = altModel && /^[\w-]+$/.test(altModel) ? `/models/${altModel}.glb` : "/models/uit_myuit_tach.glb";
 
 // Tach cay (TREE_*) ra nhom rieng: cay khong dung va cham luoi tam giac (nang),
 // moi cay chi co mot tru va cham o than.

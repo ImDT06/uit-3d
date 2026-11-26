@@ -54,7 +54,25 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
 - `tools/blender/`: script Blender (xem README trong đó). Trong .blend các Text đã liên kết tới file ở đây.
 - `.vscode/`: F5 chạy `npm run dev` rồi mở Chrome.
 
-## Mô hình 3D
+## Mô hình đang dùng (từ 26/11/2026)
+
+Web mặc định tải `public/models/uit_myuit_tach.glb`: **MyUIT nguyên bản** (`map.glb`, chủ dự án được phép dùng), chỉ
+tách thành object, không dời/uốn đỉnh, không thêm khối nhìn thấy được. Mô hình tự dựng trước đây (`uit_campus.glb`)
+đã bỏ; mục "Mô hình 3D (bản cũ)" bên dưới chỉ để tham khảo.
+
+- File Blender: `D:\uit3d\blender\uit_tach_toa.blend`, scene `TACH_TOA` (chưa có script; xuất bằng cách đổi tên tạm
+  `TACH_*` thành tên dưới đây). **Không** dùng `uit_export.py` cho bản này.
+- Object: `BLD_A, B, C, D, E, CanTin, CanTin2` (custom prop `trimesh`: va chạm lưới tam giác, không khối đặc;
+  `outline`: đường viền mặt bằng cho bản đồ), `PODIUM_B` (bậc ngồi), `ROOF_walk` (mái che lối đi), `map` (phần còn
+  lại), `GND_Base` (đa giác lồi ôm đất, z = -1; web dựng bệ sa bàn + tường biên theo cạnh), `COL_B_01..06` (khối va
+  chạm ẩn bịt cửa hông chiếu nghỉ tòa B), `ZONE_*`, `MARK_congA`, `MARK_congB`, `SPAWN`.
+- Khi xuất: Draco `export_draco_position_quantization=18` (mặc định 14 làm chữ trên biển răng cưa); xóa custom normal,
+  cạnh gấp > 30° để sắc (không thì tường bị vệt hình nêm).
+- Camera chặn `BLD_`, `PODIUM_`, `ROOF_` (BVH `three-mesh-bvh`), sát tường thì ẩn nhân vật.
+- Màu đổi trên web theo tên vật liệu: `src/world/palette.js` (`?mau=goc` xem màu gốc). Không tự tô thêm họa tiết.
+- Chưa có `ITEM_*` (điểm vật phẩm nhiệm vụ). Chưa đo FPS trên điện thoại.
+
+## Mô hình 3D (bản cũ, đã bỏ)
 
 - Dựng trong Blender 5.3, file gốc `D:\uit3d\blender\uit_blockout.blend` (không nằm trong repo).
 - Dữ liệu từ OpenStreetMap. Quy ước tên object:
