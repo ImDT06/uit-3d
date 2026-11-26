@@ -33,8 +33,11 @@ export default function Campus() {
   }, [zones, items, setGameplay]);
 
   useEffect(() => {
-    setWorld(findSpawn(buildings.map((b) => b.box)), buildings, camBlockers);
-  }, [buildings, camBlockers, setWorld]);
+    // object SPAWN (empty) trong glb thi dung lam diem xuat phat (vd ban thu MyUIT nguyen ban, khong co BLD_)
+    const sp = scene.getObjectByName("SPAWN");
+    const spawn = sp ? [sp.position.x, sp.position.y + 2, sp.position.z] : findSpawn(buildings.map((b) => b.box));
+    setWorld(spawn, buildings, camBlockers);
+  }, [scene, buildings, camBlockers, setWorld]);
 
   return (
     <>
