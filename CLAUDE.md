@@ -88,7 +88,9 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
     Lõi đặc `VIS_<tòa>_core` (script `uit_vis_core.py`): khối ngay sau mặt tường VIS_ (~0,3 m), theo từng mức mái; lấy theo
     vùng tường bao (bịt khe < 3 m: cửa, tầng trệt trống), không theo mép sàn (sàn/mái hiên nhô ra sẽ che cửa sổ).
     Nắp lõi dùng `triangle_fill` (giữ lỗ sân trong, vd C). Riêng tòa: `CLOSE` (B: bịt chỗ lõm hành lang), `MIN_LEVEL`
-    (B: bỏ mức lõi < 4 m, không thì thành bậc leo lên mái).
+    (B: bỏ mức lõi < 4 m, không thì thành bậc leo lên mái). Lõi B ẩn trên web (`HIDE_CORE` trong campusModel.js).
+    `VIS_B_vach`: tường dựng thêm dưới mép mái ở chỗ MyUIT thiếu mặt bên (khe phía đông nhìn xuyên xuống đất);
+    chỉ dựng nơi nhìn ngang vào 6 m không gặp mặt nào (không che cửa sổ). Dựng trong Blender, chưa có script.
     Web **hiện** lõi (bịt chỗ nhìn xuyên) và dùng nó làm khối va chạm + chắn camera (thay thân `BLD_`). Sửa/thay `VIS_` thì chạy lại script này.
     Cổng A: chủ dự án xác nhận cổng cũ (`GATE_*`, biến `GATE`) sai → dùng cụm cổng MyUIT (`GND_congA`, `PROP_congA`,
     `CAY_congA`: sân hoa văn mạch điện, hàng cờ, chữ UIT), chỉ dời + xoay (−14°) chứ không uốn để khỏi méo;
