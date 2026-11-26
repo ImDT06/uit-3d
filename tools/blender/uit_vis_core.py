@@ -27,6 +27,10 @@ R = 0.25           # m, kich thuoc o ban do do cao
 THIN = 1.0         # m, bo dai mong hon 2*THIN (ban cong, mai hat)
 INSET = 0.3        # m, lui vao sau mat tuong
 GAP = 1.5          # m, bit khe tuong rong toi 2*GAP (cua, tang tret trong) truoc khi lay phan ben trong
+# rieng tung toa: bit ca cho lom sau (B: hanh lang ban cong giua cac khoi nho, mat truoc ho -> nhin tu tren thanh ho sau)
+CLOSE = {"VIS_B": 4.0}
+# rieng tung toa: bo cac muc mai thap hon (m) - B: muc 2,0/2,7/3,4 xep thanh bac, nhan vat leo len mai duoc
+MIN_LEVEL = {"VIS_B": 4.0}
 SIMPLIFY = 0.3     # m, sai lech toi da khi lam tron duong vien
 MIN_LEVEL_AREA = 25.0
 
@@ -116,7 +120,7 @@ def heightmap(V):
     return H, lo, float(co[:, 2].min()), wall_mat, walls
 
 
-def wall_inside(walls, zlo, zhi, shape, lo):
+def wall_inside(walls, zlo, zhi, shape, lo, GAP=GAP):
     """Vung nam trong tuong bao (cac mat dung cat qua khoang cao zlo..zhi), da bit khe < 2*GAP."""
     zmin, zmax = walls[:, :, 2].min(1), walls[:, :, 2].max(1)
     sel = walls[(zmin < zhi) & (zmax > zlo)]
@@ -138,6 +142,26 @@ def wall_inside(walls, zlo, zhi, shape, lo):
     return erode(~out, G)
 
 
+def cap_tris(polys):
+    """Tam giac phu vung gioi han boi cac vong (vong ngoai + lo), tra ve chi so dinh theo thu tu noi cac vong."""
+    tb = bmesh.new()
+    vs = [tb.verts.new(p) for poly in polys for p in poly]
+    off = 0
+    for poly in polys:
+        k = len(poly)
+        for s in range(k):
+            try:
+                tb.edges.new((vs[off + s], vs[off + (s + 1) % k]))
+            except ValueError:
+                pass
+        off += k
+    tb.verts.index_update()
+    res = bmesh.ops.triangle_fill(tb, use_beauty=True, use_dissolve=False, edges=tb.edges[:], normal=(0, 0, 1))
+    tris = [[v.index for v in f.verts] for f in res["geom"] if isinstance(f, bmesh.types.BMFace)]
+    tb.free()
+    return tris
+
+
 def build_core(V):
     t0 = time.time()
     H, lo, base, wall_mat, walls = heightmap(V)
@@ -147,13 +171,16 @@ def build_core(V):
         if not levels or abs(levels[-1][0] - v) > 0.6:
             levels.append([v, 0])
         levels[-1][1] += 1
-    levels = sorted(l[0] for l in levels if l[1] * R * R >= MIN_LEVEL_AREA)
+    levels = sorted(l[0] for l in levels if l[1] * R * R >= MIN_LEVEL_AREA and l[0] >= MIN_LEVEL.get(V.name, 0))
     K, INS = int(THIN / R), int(INSET / R)
     masks = []
     for L in levels:
         z0 = masks[-1][0] if masks else base
         roof = erode(dilate(erode(H >= L - 0.4, K), K), 1)
-        m = erode(roof & wall_inside(walls, z0 + 0.3, L - 0.7, H.shape, lo), INS)
+        cl = CLOSE.get(V.name, 0)
+        if cl:
+            c = int(cl / R); roof = erode(dilate(roof, c), c)
+        m = erode(roof & wall_inside(walls, z0 + 0.3, L - 0.7, H.shape, lo, max(GAP, cl)), INS)
         if m.sum() * R * R >= 15:
             masks.append((L - 0.4, m))
     bm = bmesh.new()
@@ -168,7 +195,8 @@ def build_core(V):
                 polys.append([mathutils.Vector((lo[0] + x * R, lo[1] + y * R, 0)) for x, y in pts])
         if not polys:
             continue
-        tris = mathutils.geometry.tessellate_polygon(polys)
+        # nap tren/duoi: triangle_fill hieu duoc lo (san trong); tessellate_polygon thi lap kin lo
+        tris = cap_tris(polys)
         flat = [p for poly in polys for p in poly]
         vb = [bm.verts.new((p.x, p.y, z0)) for p in flat]
         vt = [bm.verts.new((p.x, p.y, top)) for p in flat]
