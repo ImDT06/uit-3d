@@ -49,7 +49,7 @@ export const ZONES = {
 // Nhan noi cho cac diem moc khong phai khu vuc (khong tinh vao "da kham pha x/y khu vuc").
 // Key = ten object trong Blender. Ten cong theo Google Maps: cong chinh = Cong A (duong Han Thuyen), cong sau = Cong B.
 export const LANDMARKS = {
-  GATE_pillars: "Cổng A",
+  PROP_congA: "Cổng A", // cum cong lay tu ban MyUIT (chu UIT, hang co, san hoa van)
   GATE_back: "Cổng B",
 };
 

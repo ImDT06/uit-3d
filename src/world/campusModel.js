@@ -83,8 +83,15 @@ export function splitScene(scene) {
 
   // VIS_<toa>: mo hinh hien thi dat vao mat bang BLD_<toa> (vd lay tu ban MyUIT). Khi co VIS_ con,
   // than BLD_ chi con lam khoi va cham + chan camera (an di, khong do bong); VIS_ thi khong dung de va cham.
+  // VIS_<toa>_core (uit_vis_core.py): khoi loi dac lui sau mat tuong VIS_ -> hien thi + lam khoi va cham, chan camera
+  // (khop voi tuong nhin thay, thay cho than BLD_ von lech vai met).
   const hidden = new THREE.MeshBasicMaterial({ visible: false });
-  const isVis = (o) => o.name.startsWith("VIS_");
+  const isCore = (o) => /^VIS_.*_core$/.test(o.name);
+  const isVis = (o) => o.name.startsWith("VIS_") && !isCore(o);
+  const underCore = (m, root) => {
+    for (let p = m; p && p !== root; p = p.parent) if (isCore(p)) return true;
+    return false;
+  };
   scene.children
     .filter((o) => o.name.startsWith("BLD_") && o.children.some(isVis))
     .forEach((o) => {
@@ -116,6 +123,43 @@ export function splitScene(scene) {
     })
     .forEach((bld) => {
       bld.userData.r3RapierType = "MeshCollider"; // rapier bo qua toa nay (ca DET_ con) khi tu tao trimesh
+      const cores = [];
+      bld.traverse((m) => m.isMesh && underCore(m, bld) && cores.push(m));
+      if (cores.length) {
+        // loi xep tang: moi tam giac mat day (huong xuong) dung lang tru toi mat mai gan nhat ngay tren no
+        const ups = [], downs = [];
+        const n_ = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3();
+        cores.forEach((m) => {
+          const pos = m.geometry.attributes.position, idx = m.geometry.index;
+          const n = idx ? idx.count : pos.count;
+          for (let i = 0; i < n; i += 3) {
+            const t = [0, 1, 2].map((k) => new THREE.Vector3().fromBufferAttribute(pos, idx ? idx.getX(i + k) : i + k).applyMatrix4(m.matrixWorld));
+            if (Math.abs(t[0].y - t[1].y) > 0.05 || Math.abs(t[0].y - t[2].y) > 0.05) continue;
+            n_.crossVectors(e1.subVectors(t[1], t[0]), e2.subVectors(t[2], t[0]));
+            (n_.y > 0 ? ups : downs).push(t);
+          }
+        });
+        const inT = (x, z, [a, b, c]) => {
+          const d1 = (x - b.x) * (a.z - b.z) - (a.x - b.x) * (z - b.z);
+          const d2 = (x - c.x) * (b.z - c.z) - (b.x - c.x) * (z - c.z);
+          const d3 = (x - a.x) * (c.z - a.z) - (c.x - a.x) * (z - a.z);
+          return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0));
+        };
+        const yMin = Math.min(...downs.map((t) => t[0].y));
+        downs.forEach((t, i) => {
+          const area = Math.abs((t[1].x - t[0].x) * (t[2].z - t[0].z) - (t[2].x - t[0].x) * (t[1].z - t[0].z)) / 2;
+          if (area < 0.05) return;
+          const cx = (t[0].x + t[1].x + t[2].x) / 3, cz = (t[0].z + t[1].z + t[2].z) / 3, yb = t[0].y;
+          let y1 = Infinity;
+          ups.forEach((u) => u[0].y > yb + 0.05 && u[0].y < y1 && inT(cx, cz, u) && (y1 = u[0].y));
+          if (!isFinite(y1)) return;
+          const y0 = yb - yMin < 0.05 ? yb - 0.5 : yb;
+          const v = [];
+          t.forEach((p) => v.push(p.x, y0, p.z, p.x, y1, p.z));
+          solids.push({ key: bld.name + "_core_" + i, verts: new Float32Array(v) });
+        });
+        return;
+      }
       const meshes = [];
       bld.traverse((m) => {
         if (!m.isMesh) return;
@@ -145,7 +189,11 @@ export function splitScene(scene) {
         const d3 = (x - a.x) * (c.z - a.z) - (c.x - a.x) * (z - a.z);
         return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0));
       };
-      const roofAt = (x, z) => roofs.find((t) => inTri(x, z, t))?.[0].y ?? box.max.y;
+      const roofAt = (x, z) => {
+        let y = -Infinity;
+        roofs.forEach((t) => t[0].y > y && inTri(x, z, t) && (y = t[0].y));
+        return isFinite(y) ? y : box.max.y;
+      };
       meshes.forEach((m) => {
         const pos = m.geometry.attributes.position;
         const idx = m.geometry.index;
@@ -170,13 +218,17 @@ export function splitScene(scene) {
   const camBlockers = [];
   scene.children
     .filter((o) => o.name.startsWith("BLD_"))
-    .forEach((o) =>
+    .forEach((o) => {
+      // co loi VIS_*_core: chan camera bang loi (khop tuong nhin thay); khong thi bang than BLD_ (bo qua luoi VIS_ nang)
+      const cores = [];
+      o.traverse((m) => m.isMesh && underCore(m, o) && cores.push(m));
+      if (cores.length) return camBlockers.push(...cores);
       o.traverse((m) => {
         if (!m.isMesh) return;
-        for (let p = m; p && p !== o; p = p.parent) if (isVis(p)) return; // luoi VIS_ nang: chan camera bang than BLD_ an
+        for (let p = m; p && p !== o; p = p.parent) if (isVis(p)) return;
         camBlockers.push(m);
-      })
-    );
+      });
+    });
   // tuong bien vo hinh quanh mep mat dat (GND_Base), khong cho di ra ngoai truong
   const walls = [];
   const base = scene.getObjectByName("GND_Base");

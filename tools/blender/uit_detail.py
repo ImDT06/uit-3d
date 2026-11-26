@@ -1082,6 +1082,10 @@ def sign_mesh(ring, zmax, axis, text):
 # 1b. Cong chinh (theo anh flycam: duong vao co dai bon cay o giua, hai tru cong, hang rao thap)
 # ---------------------------------------------------------------------------
 def build_gate(coll):
+    # cong A lay tu ban MyUIT (PROP_congA / GND_congA, dung chu UIT, hang co, san hoa van): khong dung cong cu
+    if bpy.data.objects.get("PROP_congA"):
+        log("   Da co cong A cua MyUIT (PROP_congA), bo qua cong cu")
+        return 0
     pos = Vector(GATE["pos"])
     d = Vector(GATE["dir"]).normalized()
     side = Vector((-d.y, d.x))

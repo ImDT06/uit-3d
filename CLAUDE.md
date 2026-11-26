@@ -74,6 +74,12 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
     Mặt đất MyUIT gốc cao 0,57 m → đã hạ; các tấm đất nâng/sườn dốc của họ cũng ép phẳng; cắt theo khung `GND_Base`.
     Cây: `CAY_myuit` (mesh gộp mọi cây MyUIT, chỉ hiển thị) + `CAY_###` (empty ở gốc, web dựng trụ va chạm như `TREE_*`).
     Có `CAY_*` thì `uit_detail.py` không trồng cây tự động; `TREE_*` cũ trong khuôn viên đã cất vào `VIS_BACKUP`.
+    Lớp đất cũ (`GND_Green/Pitch`, `PATH_Footway/Road`) đã cắt phần nằm dưới `GND_myuit` (bản gốc: `*_goc` trong `VIS_BACKUP`).
+    Lõi đặc `VIS_<tòa>_core` (script `uit_vis_core.py`): khối lùi sau mặt tường VIS_ ~1 m, theo từng mức mái; web dùng lõi
+    làm khối va chạm + chắn camera (thay thân `BLD_`). Sửa/thay `VIS_` thì chạy lại script này.
+    Cổng A: chủ dự án xác nhận cổng cũ (`GATE_*`, biến `GATE`) sai → dùng cụm cổng MyUIT (`GND_congA`, `PROP_congA`,
+    `CAY_congA`: sân hoa văn mạch điện, hàng cờ, chữ UIT), chỉ dời + xoay (−14°) chứ không uốn để khỏi méo;
+    `uit_detail.py` bỏ qua cổng cũ khi có `PROP_congA`. Tour: `GATE_POS` trong `IntroScene.jsx`.
     Web: có `VIS_` thì thân `BLD_` ẩn đi, chỉ làm khối va chạm + chắn camera; `VIS_` không dùng để va chạm.
     `uit_detail.py` bỏ qua tòa có `VIS_` (không dựng chi tiết đè lên) và không xóa `VIS_`.
     So sánh với ảnh vệ tinh: mặt bằng MyUIT lệch/to hơn thực tế (A, nhà ăn), nên chỉ lấy hình tòa, không lấy mặt bằng.

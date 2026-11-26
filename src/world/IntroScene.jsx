@@ -9,9 +9,9 @@ import { zoneInfo } from "../data/zones";
 // Thu tu cac toa trong chuyen tham quan (key = ten object Blender)
 const TOUR = ["BLD_A", "BLD_E", "BLD_B", "BLD_C", "BLD_CanTin"];
 
-// Cong chinh (toa do Blender trong uit_detail.py, bien GATE) doi sang three: (x, y) -> (x, -y)
-const GATE_POS = new THREE.Vector3(-71.2, 0, -12.5);
-const GATE_DIR = new THREE.Vector3(20, 0, 7).normalize();
+// Cong A (toa do Blender cua cum PROP_congA) doi sang three: (x, y) -> (x, -y)
+const GATE_POS = new THREE.Vector3(-56.8, 0, 4.3); // tam cum cong A (PROP_congA, lay tu ban MyUIT)
+const GATE_DIR = new THREE.Vector3(31.8, 0, -4.3).normalize(); // nhin vao giua A (trai) va E (phai)
 
 const isWide = () => window.innerWidth > 900;
 
