@@ -38,7 +38,11 @@ function Buildings({ buildings, visited, current, labels, labelSize = 4 }) {
     const cls = "map-bld" + (b.name === current ? " cur" : visited[b.name] ? " seen" : "");
     return (
       <g key={b.name}>
-        <rect className={cls} x={b.box.min.x} y={b.box.min.z} width={w} height={h} rx={1.5} />
+        {b.outline ? (
+          <path className={cls} d={b.outline} fillRule="evenodd" />
+        ) : (
+          <rect className={cls} x={b.box.min.x} y={b.box.min.z} width={w} height={h} rx={1.5} />
+        )}
         {labels && (
           <text className="map-label" fontSize={labelSize} x={b.box.min.x + w / 2} y={b.box.min.z + h / 2}>
             {zoneInfo(b.name).title}

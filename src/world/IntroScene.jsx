@@ -7,7 +7,7 @@ import { useGame } from "../game/store";
 import { zoneInfo } from "../data/zones";
 
 // Thu tu cac toa trong chuyen tham quan (key = ten object Blender)
-const TOUR = ["BLD_A", "BLD_E", "BLD_B", "BLD_C", "BLD_CanTin"];
+const TOUR = ["BLD_A", "BLD_E", "BLD_B", "BLD_C", "BLD_CanTin", "BLD_CanTin2", "BLD_D"];
 
 // Cong A (toa do Blender cua cum PROP_congA) doi sang three: (x, y) -> (x, -y)
 const GATE_POS = new THREE.Vector3(-56.8, 0, 4.3); // tam cum cong A (PROP_congA, lay tu ban MyUIT)
@@ -41,7 +41,7 @@ function makeStops(buildings, bounds) {
       key: "gate",
       title: "Cổng A",
       subtitle: "Cổng chính · Đường Hàn Thuyên",
-      description: "Đường vào có dải bồn cây ở giữa, hai bên là bãi cỏ và hàng cây lớn. Bên trái là tòa A, bên phải là tòa E.",
+      description: "Sân đón có nền hoa văn mạch điện, chữ UIT và hàng cờ. Bên trái là tòa A, bên phải là tòa E.",
       cam: GATE_POS.clone().addScaledVector(GATE_DIR, -32).setY(16).toArray(),
       target: GATE_POS.clone().addScaledVector(GATE_DIR, 22).setY(4).toArray(),
       ring: { x: GATE_POS.x + GATE_DIR.x * 8, z: GATE_POS.z + GATE_DIR.z * 8, r: 10 },
@@ -97,6 +97,27 @@ function Ring({ x, y = 0.35, z, r, visible }) {
   );
 }
 
+// Khoi be sa ban theo da giac mat bang (x, z); grow: noi rong moi dinh ra xa tam (m)
+function Slab({ edge, top, height, grow = 0, color, roughness }) {
+  const geometry = useMemo(() => {
+    const mx = edge.reduce((s, p) => s + p[0], 0) / edge.length, mz = edge.reduce((s, p) => s + p[1], 0) / edge.length;
+    const pts = edge.map(([x, z]) => {
+      const d = Math.hypot(x - mx, z - mz);
+      const k = (d + grow) / d;
+      // Shape nam trong mat XY, xoay -90 do quanh X: y cua Shape = -z
+      return new THREE.Vector2(mx + (x - mx) * k, -(mz + (z - mz) * k));
+    });
+    const g = new THREE.ExtrudeGeometry(new THREE.Shape(pts), { depth: height, bevelEnabled: false });
+    g.rotateX(-Math.PI / 2);
+    return g;
+  }, [edge, height, grow]);
+  return (
+    <mesh geometry={geometry} position-y={top - height} receiveShadow>
+      <meshStandardMaterial color={color} roughness={roughness} />
+    </mesh>
+  );
+}
+
 // Tim toa BLD_ chua object bi tro chuot
 function buildingOf(o) {
   while (o) {
@@ -109,7 +130,7 @@ function buildingOf(o) {
 // Canh 3D cua trang chu + tham quan: dung chung mo hinh voi che do kham pha
 export default function IntroScene() {
   const { scene } = useGLTF(MODEL_URL);
-  const { deco, buildings, bounds } = useMemo(() => splitScene(scene), [scene]);
+  const { deco, buildings, bounds, edge } = useMemo(() => splitScene(scene), [scene]);
   const mode = useGame((s) => s.mode);
   const step = useGame((s) => s.tourStep);
   const setMode = useGame((s) => s.setMode);
@@ -221,14 +242,23 @@ export default function IntroScene() {
       </group>
 
       {/* be sa ban duoi mat dat */}
-      <mesh position={[center.x, -7.02 - sink, center.z]} receiveShadow>
-        <boxGeometry args={[size.x + 0.02, 14, size.z + 0.02]} />
-        <meshStandardMaterial color="#efe4d2" roughness={0.9} />
-      </mesh>
-      <mesh position={[center.x, -14.6 - sink, center.z]}>
-        <boxGeometry args={[size.x + 14, 1.2, size.z + 14]} />
-        <meshStandardMaterial color="#1d2b55" roughness={0.6} />
-      </mesh>
+      {edge ? (
+        <>
+          <Slab edge={edge} top={-0.02 - sink} height={14} color="#efe4d2" roughness={0.9} />
+          <Slab edge={edge} top={-14 - sink} height={1.2} grow={7} color="#1d2b55" roughness={0.6} />
+        </>
+      ) : (
+        <>
+          <mesh position={[center.x, -7.02, center.z]} receiveShadow>
+            <boxGeometry args={[size.x + 0.02, 14, size.z + 0.02]} />
+            <meshStandardMaterial color="#efe4d2" roughness={0.9} />
+          </mesh>
+          <mesh position={[center.x, -14.6, center.z]}>
+            <boxGeometry args={[size.x + 14, 1.2, size.z + 14]} />
+            <meshStandardMaterial color="#1d2b55" roughness={0.6} />
+          </mesh>
+        </>
+      )}
 
       {/* luon gan (chi an/hien) de shader duoc bien dich san o trang chu */}
       <Ring x={ring?.x ?? 0} y={ringY} z={ring?.z ?? 0} r={ring?.r ?? 10} visible={!!ring} />

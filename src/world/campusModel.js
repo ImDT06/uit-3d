@@ -127,7 +127,13 @@ export function splitScene(scene) {
     .map((o) => {
       const box = new THREE.Box3().setFromObject(o);
       const c = box.getCenter(new THREE.Vector3());
-      return { name: o.name, box, center: [c.x, box.max.y + 3, c.z] };
+      // outline: duong vien mat bang cho ban do (custom prop tu Blender, chi ban cat tu MyUIT co)
+      let outline = null;
+      if (o.userData.outline) {
+        const loops = JSON.parse(o.userData.outline);
+        outline = loops.map((l) => "M" + l.map((p) => p.join(" ")).join("L") + "Z").join("");
+      }
+      return { name: o.name, box, center: [c.x, box.max.y + 3, c.z], outline };
     });
   // Toa nha: khong dung trimesh (tuong mong, nhan vat co the bi day lot vao trong).
   // Thay bang khoi dac: moi tam giac mat day dung thanh lang tru cao bang toa -> ConvexHullCollider.
@@ -260,7 +266,31 @@ export function splitScene(scene) {
   const walls = [];
   const base = scene.getObjectByName("GND_Base");
   const bounds = base ? new THREE.Box3().setFromObject(base) : new THREE.Box3(new THREE.Vector3(-150, 0, -150), new THREE.Vector3(150, 0, 150));
-  if (base) {
+  // ban cat tu MyUIT: nen la da giac loi om theo dat (hinh thoi) -> tuong bien va be sa ban theo cac canh cua no
+  let edge = null;
+  if (base?.isMesh && scene.children.some((o) => o.userData.trimesh)) {
+    const pos = base.geometry.attributes.position, pts = new Map();
+    for (let i = 0; i < pos.count; i++) {
+      const p = new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(base.matrixWorld);
+      pts.set(p.x.toFixed(1) + "," + p.z.toFixed(1), [p.x, p.z]);
+    }
+    const list = [...pts.values()];
+    const mx = list.reduce((s, p) => s + p[0], 0) / list.length, mz = list.reduce((s, p) => s + p[1], 0) / list.length;
+    edge = list.sort((a, b) => Math.atan2(a[1] - mz, a[0] - mx) - Math.atan2(b[1] - mz, b[0] - mx));
+  }
+  if (edge) {
+    const H = 15, T = 1;
+    edge.forEach(([x0, z0], i) => {
+      const [x1, z1] = edge[(i + 1) % edge.length];
+      const dx = x1 - x0, dz = z1 - z0, len = Math.hypot(dx, dz);
+      // goc sap theo chieu tang cua atan2 nen phia ngoai la (dz, -dx)
+      walls.push({
+        pos: [(x0 + x1) / 2 + (dz / len) * T, H, (z0 + z1) / 2 - (dx / len) * T],
+        rot: [0, -Math.atan2(dz, dx), 0],
+        args: [len / 2 + T, H, T],
+      });
+    });
+  } else if (base) {
     const b = bounds;
     const H = 15, T = 1; // nua chieu cao, nua do day
     const cx = (b.min.x + b.max.x) / 2, cz = (b.min.z + b.max.z) / 2;
@@ -277,11 +307,13 @@ export function splitScene(scene) {
     .map((name) => scene.getObjectByName(name))
     .filter(Boolean)
     .map((o) => {
+      // MARK_*: empty danh dau mot diem (khong co hinh) -> dung thang vi tri cua no
+      if (o.name.startsWith("MARK_")) return { name: o.name, center: o.position.toArray() };
       const box = new THREE.Box3().setFromObject(o);
       const c = box.getCenter(new THREE.Vector3());
       return { name: o.name, center: [c.x, box.max.y + 2, c.z] };
     });
-  scene.userData.split = { deco, trees, buildings, camBlockers, walls, zones, items, solids, bounds, landmarks };
+  scene.userData.split = { deco, trees, buildings, camBlockers, walls, zones, items, solids, bounds, landmarks, edge };
   return scene.userData.split;
 }
 

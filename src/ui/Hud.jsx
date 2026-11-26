@@ -42,8 +42,11 @@ function InteractPrompt() {
 
 function Progress() {
   const visited = useGame((s) => s.visited);
-  const total = Object.keys(ZONES).length;
-  const done = Object.keys(visited).filter((k) => ZONES[k]).length;
+  const buildings = useGame((s) => s.buildings);
+  // chi dem cac toa co trong mo hinh dang dung
+  const names = buildings.map((b) => b.name).filter((k) => ZONES[k]);
+  const total = names.length;
+  const done = names.filter((k) => visited[k]).length;
   return (
     <div className="progress">
       <span className="progress-long">Đã khám phá </span>

@@ -13,7 +13,7 @@ export const ZONES = {
     title: "Tòa B",
     subtitle: "Phòng học · Phòng máy",
     description:
-      "Tòa nhà nhiều tầng hình vòng cung, tường trắng với các dải kính xanh chạy dọc thân. Có phòng học, phòng học lớn và phòng máy chất lượng cao.",
+      "Tòa nhà nhiều tầng hình vòng cung sơn xanh da trời, có các dải xanh đậm chạy ngang thân; mặt phía sân là những dải kính cao và bậc ngồi vòng cung. Có phòng học, phòng học lớn và phòng máy chất lượng cao.",
     image: null,
   },
   BLD_C: {
@@ -23,7 +23,7 @@ export const ZONES = {
       "Dãy nhà 3 tầng mặt tiền xanh nhìn ra sân bóng, sảnh giữa có bảng tên trường và cột cờ. Có phòng học, phòng học chất lượng cao và phòng thực hành.",
     image: null,
   },
-  BLD_D: { title: "Tòa D", subtitle: "", description: "", image: null },
+  BLD_D: { title: "Tòa D", subtitle: "Gần cổng B", description: "Dãy nhà một tầng tường trắng viền xanh, nằm ở cuối đường phía nam, gần cổng B.", image: null },
   BLD_E: {
     title: "Tòa E",
     subtitle: "Các khoa · Hội trường",
@@ -51,6 +51,8 @@ export const ZONES = {
 export const LANDMARKS = {
   PROP_congA: "Cổng A", // cum cong lay tu ban MyUIT (chu UIT, hang co, san hoa van)
   GATE_back: "Cổng B",
+  MARK_congA: "Cổng A", // diem danh dau trong ban cat tu MyUIT
+  MARK_congB: "Cổng B",
 };
 
 // Ten hien thi cho object khong co trong bang tren

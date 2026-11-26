@@ -67,7 +67,7 @@ export default function Campus() {
       {walls.length > 0 && (
         <RigidBody type="fixed" colliders={false}>
           {walls.map((w, i) => (
-            <CuboidCollider key={i} position={w.pos} args={w.args} />
+            <CuboidCollider key={i} position={w.pos} rotation={w.rot} args={w.args} />
           ))}
         </RigidBody>
       )}
