@@ -189,6 +189,8 @@ export default function IntroScene() {
   const ring = mode === "tour" ? stops[step]?.ring : null;
   // ban cat tu MyUIT: san quanh toa cao toi 2,26 m, vong sang de thap thi chim duoi dat
   const ringY = buildings.some((b) => scene.getObjectByName(b.name)?.userData.trimesh) ? 2.4 : undefined;
+  // nen ban cat tu MyUIT ha thap 1 m: ha be sa ban theo, khong thi be che mat nen
+  const sink = ringY ? 1 : 0;
 
   return (
     <>
@@ -219,11 +221,11 @@ export default function IntroScene() {
       </group>
 
       {/* be sa ban duoi mat dat */}
-      <mesh position={[center.x, -7.02, center.z]} receiveShadow>
+      <mesh position={[center.x, -7.02 - sink, center.z]} receiveShadow>
         <boxGeometry args={[size.x + 0.02, 14, size.z + 0.02]} />
         <meshStandardMaterial color="#efe4d2" roughness={0.9} />
       </mesh>
-      <mesh position={[center.x, -14.6, center.z]}>
+      <mesh position={[center.x, -14.6 - sink, center.z]}>
         <boxGeometry args={[size.x + 14, 1.2, size.z + 14]} />
         <meshStandardMaterial color="#1d2b55" roughness={0.6} />
       </mesh>
