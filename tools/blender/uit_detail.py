@@ -1267,6 +1267,10 @@ class Grid:
 
 
 def plant_trees(coll):
+    # da co cay lay tu ban MyUIT (CAY_*): khong trong them cay tu dong
+    if any(o.name.startswith("CAY_") for o in bpy.data.objects):
+        log("Da co cay CAY_* (MyUIT), bo qua trong cay tu dong")
+        return 0
     green = bpy.data.objects.get("GND_Green")
     if not green:
         log("Khong co GND_Green, bo qua trong cay")
@@ -1328,6 +1332,10 @@ def main():
     total = 0
     for o in list(bcol.objects):
         if o.name.startswith("BLD_") and o.type == "MESH":
+            # toa da co mo hinh hien thi rieng (VIS_*, vd lay tu ban MyUIT): khong dung chi tiet de len
+            if any(c.name.startswith("VIS_") for c in o.children):
+                log(f"   {o.name:15s} bo qua (da co {', '.join(c.name for c in o.children if c.name.startswith('VIS_'))})")
+                continue
             t = detail_building(o, bcol)
             total += t
             log(f"   {o.name:15s} +{t} tam giac chi tiet")

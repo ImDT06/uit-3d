@@ -5,7 +5,8 @@ export const ZONES = {
   BLD_A: {
     title: "Tòa A",
     subtitle: "Thư viện · Hành chính",
-    description: "Tòa nhà 3 tầng với hai mái vòm xanh ngọc, nơi có thư viện và Data Center của trường.",
+    description:
+      "Tòa nhà 3 tầng, khối nhỏ 2 tầng phía bắc (sát góc đông bắc) là Thư viện trường. Tòa còn có khu hành chính và Data Center.",
     image: null,
   },
   BLD_B: {
@@ -39,10 +40,17 @@ export const ZONES = {
   BLD_CanTin2: {
     title: "Căn tin",
     subtitle: "Bánh · Nước",
-    description: "Dãy nhà mái tôn xanh nổi bật, bán bánh, nước và đồ ăn vặt. Đi qua đây là ra cổng sau.",
+    description: "Dãy nhà mái tôn xanh nổi bật, bán bánh, nước và đồ ăn vặt. Đi qua đây là ra cổng B (cổng sau).",
     image: null,
   },
   BLD_ChotBaoVe: { title: "Chốt bảo vệ", subtitle: "", description: "", image: null },
+};
+
+// Nhan noi cho cac diem moc khong phai khu vuc (khong tinh vao "da kham pha x/y khu vuc").
+// Key = ten object trong Blender. Ten cong theo Google Maps: cong chinh = Cong A (duong Han Thuyen), cong sau = Cong B.
+export const LANDMARKS = {
+  GATE_pillars: "Cổng A",
+  GATE_back: "Cổng B",
 };
 
 // Ten hien thi cho object khong co trong bang tren

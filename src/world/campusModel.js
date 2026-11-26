@@ -2,6 +2,7 @@
 // Tach rieng de trang chu khong phai tai thu vien vat ly Rapier (~2 MB).
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
+import { LANDMARKS } from "../data/zones";
 
 // ?model=uit_campus_bakeB: xem thu file glb khac trong public/models (vd ban nuong anh sang dang duyet)
 const altModel = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("model");
@@ -14,9 +15,13 @@ export function splitScene(scene) {
   const deco = new THREE.Group();
   const trees = [];
   [...scene.children].forEach((o) => {
-    if (o.name.startsWith("TREE_")) {
+    // TREE_*: cay trong tu dong (uit_detail.py), moi cay mot object.
+    // CAY_*: cay lay tu ban MyUIT: CAY_myuit = mot mesh gop moi cay (chi hien thi, it lenh ve),
+    // CAY_### = empty dat o goc tung cay (chi de dung tru va cham).
+    if (o.name.startsWith("TREE_") || o.name.startsWith("CAY_")) {
       deco.add(o); // tu dong go khoi scene
-      trees.push({ key: o.name, x: o.position.x, z: o.position.z, s: o.scale.x });
+      const isPoint = o.name.startsWith("CAY_") && !o.isMesh && o.children.length === 0;
+      if (o.name.startsWith("TREE_") || isPoint) trees.push({ key: o.name, x: o.position.x, z: o.position.z, s: o.scale.x });
     }
   });
   // Bong do: vat lieu trong glb deu 2 mat (doubleSided) nen mat dang duoc chieu sang tu in bong len chinh no
@@ -76,6 +81,17 @@ export function splitScene(scene) {
     }
   });
 
+  // VIS_<toa>: mo hinh hien thi dat vao mat bang BLD_<toa> (vd lay tu ban MyUIT). Khi co VIS_ con,
+  // than BLD_ chi con lam khoi va cham + chan camera (an di, khong do bong); VIS_ thi khong dung de va cham.
+  const hidden = new THREE.MeshBasicMaterial({ visible: false });
+  const isVis = (o) => o.name.startsWith("VIS_");
+  scene.children
+    .filter((o) => o.name.startsWith("BLD_") && o.children.some(isVis))
+    .forEach((o) => {
+      if (o.isMesh) o.material = hidden;
+      else o.children.forEach((m) => m.isMesh && !isVis(m) && !m.name.startsWith("DET_") && (m.material = hidden));
+    });
+
   const buildings = scene.children
     .filter((o) => o.name.startsWith("BLD_"))
     .map((o) => {
@@ -105,7 +121,7 @@ export function splitScene(scene) {
         if (!m.isMesh) return;
         let p = m;
         while (p && p !== bld) {
-          if (p.name.startsWith("DET_")) return;
+          if (p.name.startsWith("DET_") || isVis(p)) return;
           p = p.parent;
         }
         meshes.push(m);
@@ -154,7 +170,13 @@ export function splitScene(scene) {
   const camBlockers = [];
   scene.children
     .filter((o) => o.name.startsWith("BLD_"))
-    .forEach((o) => o.traverse((m) => m.isMesh && camBlockers.push(m)));
+    .forEach((o) =>
+      o.traverse((m) => {
+        if (!m.isMesh) return;
+        for (let p = m; p && p !== o; p = p.parent) if (isVis(p)) return; // luoi VIS_ nang: chan camera bang than BLD_ an
+        camBlockers.push(m);
+      })
+    );
   // tuong bien vo hinh quanh mep mat dat (GND_Base), khong cho di ra ngoai truong
   const walls = [];
   const base = scene.getObjectByName("GND_Base");
@@ -171,7 +193,16 @@ export function splitScene(scene) {
       { pos: [cx, H, b.max.z + T], args: [hx, H, T] }
     );
   }
-  scene.userData.split = { deco, trees, buildings, camBlockers, walls, zones, items, solids, bounds };
+  // diem moc co nhan noi (cong A, cong B...): ten object -> vi tri tren dinh
+  const landmarks = Object.keys(LANDMARKS)
+    .map((name) => scene.getObjectByName(name))
+    .filter(Boolean)
+    .map((o) => {
+      const box = new THREE.Box3().setFromObject(o);
+      const c = box.getCenter(new THREE.Vector3());
+      return { name: o.name, center: [c.x, box.max.y + 2, c.z] };
+    });
+  scene.userData.split = { deco, trees, buildings, camBlockers, walls, zones, items, solids, bounds, landmarks };
   return scene.userData.split;
 }
 

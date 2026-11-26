@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Joystick, VirtualButton } from "ecctrl/input";
 import { useGame } from "../game/store";
 import { useSettings, bindLabel } from "../game/settings";
 import { doAction } from "../game/actions";
@@ -7,6 +6,7 @@ import { ZONES, zoneInfo } from "../data/zones";
 import { Minimap, BigMap } from "./MapView";
 import Menu from "./Menu";
 import Tutorial from "./Tutorial";
+import TouchControls, { useTouchMode } from "./TouchControls";
 
 // The thong tin toa nha: mo bang phim tuong tac (E)
 function ZoneCard() {
@@ -28,6 +28,7 @@ function ZoneCard() {
 
 // Goi y "E - Xem thong tin" khi dung gan toa nha
 function InteractPrompt() {
+  const isTouch = useTouchMode();
   const zone = useGame((s) => s.currentZone);
   const open = useGame((s) => s.infoOpen);
   useSettings((s) => s.binds);
@@ -108,25 +109,14 @@ function Help() {
 // nut khong giu focus, tranh bam Space (nhay) lai kich hoat nut vua bam
 const noFocus = { onMouseDown: (e) => e.preventDefault() };
 
-const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
-
-function TouchControls() {
-  const btn = (bottom, right) => ({ position: "fixed", bottom, right, zIndex: 20 });
-  return (
-    <>
-      <Joystick id="move" />
-      <VirtualButton id="jump" label="Nhảy" buttonWrapperStyle={btn(40, 30)} />
-      <VirtualButton id="run" label="Chạy" buttonWrapperStyle={btn(130, 100)} />
-      <div className="touch-top">
-        <button onClick={() => doAction("view")}>👁</button>
-        <button onClick={() => doAction("menu")}>☰</button>
-      </div>
-    </>
-  );
-}
-
 export default function Hud() {
   const overlay = useGame((s) => s.menuOpen || s.mapOpen);
+  const isTouch = useTouchMode();
+  // class tren body de CSS doi bo cuc cho man hinh cam ung (ban do nho len goc phai...)
+  useEffect(() => {
+    document.body.classList.toggle("touch", isTouch);
+    return () => document.body.classList.remove("touch");
+  }, [isTouch]);
   return (
     <>
       {!overlay && (

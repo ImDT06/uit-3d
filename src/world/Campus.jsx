@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useGLTF, Html } from "@react-three/drei";
 import { RigidBody, CylinderCollider, CuboidCollider, ConvexHullCollider } from "@react-three/rapier";
 import { useGame } from "../game/store";
-import { zoneInfo } from "../data/zones";
+import { zoneInfo, LANDMARKS } from "../data/zones";
 import { MODEL_URL, splitScene } from "./campusModel";
 
 // Tim diem xuat phat khong nam trong toa nha nao, gan tam truong nhat
@@ -26,7 +26,7 @@ export default function Campus() {
   const setWorld = useGame((s) => s.setWorld);
   const setGameplay = useGame((s) => s.setGameplay);
   const debug = useGame((s) => s.physicsDebug);
-  const { deco, trees, buildings, camBlockers, walls, zones, items, solids } = useMemo(() => splitScene(scene), [scene]);
+  const { deco, trees, buildings, camBlockers, walls, zones, items, solids, landmarks } = useMemo(() => splitScene(scene), [scene]);
 
   useEffect(() => {
     setGameplay(zones, items);
@@ -84,6 +84,12 @@ export default function Campus() {
       {buildings.map((b) => (
         <Html key={b.name} position={b.center} center distanceFactor={60} zIndexRange={[10, 0]}>
           <div className="label">{zoneInfo(b.name).title}</div>
+        </Html>
+      ))}
+      {/* Nhan cong A / cong B */}
+      {landmarks.map((l) => (
+        <Html key={l.name} position={l.center} center distanceFactor={60} zIndexRange={[10, 0]}>
+          <div className="label">{LANDMARKS[l.name]}</div>
         </Html>
       ))}
     </>

@@ -39,8 +39,8 @@ function makeStops(buildings, bounds) {
     },
     {
       key: "gate",
-      title: "Cổng chính",
-      subtitle: "Lối vào",
+      title: "Cổng A",
+      subtitle: "Cổng chính · Đường Hàn Thuyên",
       description: "Đường vào có dải bồn cây ở giữa, hai bên là bãi cỏ và hàng cây lớn. Bên trái là tòa A, bên phải là tòa E.",
       cam: GATE_POS.clone().addScaledVector(GATE_DIR, -32).setY(16).toArray(),
       target: GATE_POS.clone().addScaledVector(GATE_DIR, 22).setY(4).toArray(),

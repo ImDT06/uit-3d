@@ -147,6 +147,8 @@ export default function Player() {
     }
     // trinh duyet chi cho khoa chuot sau thao tac cua nguoi dung; that bai thi bo qua
     const lock = () => {
+      // man hinh cam ung (body.touch, xem ui/TouchControls.jsx): khong khoa chuot, shift lock chi xoay nhan vat theo camera
+      if (document.body.classList.contains("touch")) return;
       try {
         const r = canvas.requestPointerLock?.();
         if (r && r.catch) r.catch(() => {});
