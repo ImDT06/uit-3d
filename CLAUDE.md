@@ -56,7 +56,9 @@ Chia theo vai trò; file mới đặt đúng nhóm, import bằng đường dẫ
 
 ## Mô hình đang dùng (từ 26/11/2026)
 
-Web mặc định tải `public/models/uit_myuit_tach.glb`: **MyUIT nguyên bản** (`map.glb`, chủ dự án được phép dùng), chỉ
+Web mặc định tải `public/models/uit_myuit_nuongB.glb` (từ 27/11): bản `uit_myuit_tach.glb` có `BLD_B` + `PODIUM_B`
+đã nướng ánh sáng (xem mục Đồ họa; `?model=uit_myuit_tach` để xem bản chưa nướng). Sửa mô hình thì xuất lại
+`uit_myuit_tach.glb` rồi chạy lại `uit_nuong_myuit.py`. File `tach` là **MyUIT nguyên bản** (`map.glb`, chủ dự án được phép dùng), chỉ
 tách thành object, không dời/uốn đỉnh, không thêm khối nhìn thấy được. Mô hình tự dựng trước đây (`uit_campus.glb`)
 đã bỏ; mục "Mô hình 3D (bản cũ)" bên dưới chỉ để tham khảo.
 
@@ -74,6 +76,11 @@ tách thành object, không dời/uốn đỉnh, không thêm khối nhìn thấ
 
 ## Đồ họa
 
+- Nướng ánh sáng: `blender -b --factory-startup -P tools/blender/uit_nuong_myuit.py` (đầu vào `uit_myuit_tach.glb`).
+  Ánh sáng khớp preset `thap`, màu khớp `palette.js`: đổi một trong hai thì sửa script và nướng lại. Object có prop
+  `baked`, `lm` → `MeshBasicMaterial`. Mới nướng B + sân bậc; nướng thêm tòa khác chỉ khi chủ dự án bảo.
+- Bóng nhân vật trên mặt đã nướng: `world/CharShadow.jsx` + `charShadowMaterial.js` (chụp độ sâu riêng nhân vật;
+  tia về phía mặt trời bị che thì không vẽ).
 - Ánh sáng mặc định `thap` (nắng thấp, chủ dự án chọn) trong `world/lighting.js`; `?nang=tuoi|sang|trua|chieu` để so.
 - `world/Effects.jsx` (N8AO, bloom, khử răng cưa; `@react-three/postprocessing`): chỉ chất lượng Cao, không bật trên
   màn hình cảm ứng; `?fx=0|1` tắt / ép bật. Tải riêng khi bật (trang chủ, tham quan chưa dùng).

@@ -1,13 +1,15 @@
 // Xu ly mo hinh khuon vien (khong dung vat ly): dung chung cho trang chu (IntroScene) va che do kham pha (Campus).
 // Tach rieng de trang chu khong phai tai thu vien vat ly Rapier (~2 MB).
+import { receiveCharShadow } from "./charShadowMaterial";
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 import { LANDMARKS } from "../data/zones";
 import { applyPalette } from "./palette";
 
-// ?model=uit_campus_bakeB: xem thu file glb khac trong public/models (vd ban nuong anh sang dang duyet)
+// Ban chinh: toa B + san bac da nuong anh sang (nuong tu uit_myuit_tach.glb bang tools/blender/uit_nuong_myuit.py)
+// ?model=uit_myuit_tach: xem file glb khac trong public/models (vd ban chua nuong)
 const altModel = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("model");
-export const MODEL_URL = altModel && /^[\w-]+$/.test(altModel) ? `/models/${altModel}.glb` : "/models/uit_myuit_tach.glb";
+export const MODEL_URL = altModel && /^[\w-]+$/.test(altModel) ? `/models/${altModel}.glb` : "/models/uit_myuit_nuongB.glb";
 
 // Tach cay (TREE_*) ra nhom rieng: cay khong dung va cham luoi tam giac (nang),
 // moi cay chi co mot tru va cham o than.
@@ -39,12 +41,18 @@ export function splitScene(scene) {
     for (let p = o; p && p !== scene; p = p.parent) if (p.userData.baked) return true;
     return false;
   };
+  let hasBaked = false;
   scene.traverse((o) => {
     if (!o.isMesh) return;
     o.castShadow = !flat(o);
     if (baked(o) && o.material.map) {
       const old = o.material;
-      o.material = new THREE.MeshBasicMaterial({ map: old.map, side: old.side, toneMapped: false, name: old.name });
+      // lm (uit_nuong_myuit.py): anh luu anh sang tuyen tinh da thu nho -> nhan lai, tone mapping nhu vat the khac
+      const lm = o.userData.lm || o.parent?.userData.lm;
+      o.material = new THREE.MeshBasicMaterial({ map: old.map, side: old.side, toneMapped: !!lm, name: old.name });
+      if (lm) o.material.color.setScalar(lm);
+      receiveCharShadow(o.material); // be mat nuong nhan rieng bong nhan vat
+      hasBaked = true;
       o.receiveShadow = false;
     } else {
       o.receiveShadow = true;
@@ -316,7 +324,7 @@ export function splitScene(scene) {
       const c = box.getCenter(new THREE.Vector3());
       return { name: o.name, center: [c.x, box.max.y + 2, c.z] };
     });
-  scene.userData.split = { deco, trees, buildings, camBlockers, camGround, walls, zones, items, solids, bounds, landmarks, edge };
+  scene.userData.split = { deco, trees, buildings, camBlockers, camGround, walls, zones, items, solids, bounds, landmarks, edge, hasBaked };
   return scene.userData.split;
 }
 

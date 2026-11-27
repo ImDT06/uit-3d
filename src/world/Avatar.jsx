@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useGraph } from "@react-three/fiber";
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
+import { CHAR_LAYER } from "./charShadowMaterial";
 
 // Mo hinh nhan vat (public/models/nv_nam.glb, nv_nu.glb, dung bang tools/blender/uit_nhanvat.py).
 // Chan o y = 0, cao ~1,85 m, mat nhin ve +Z. Toc dai la object ToDai (chi ban nu).
@@ -19,6 +20,7 @@ export default function Avatar({ gender = "nam", hair = "ngan", drive }) {
     model.traverse((o) => {
       if (!o.isMesh) return;
       o.castShadow = true;
+      o.layers.enable(CHAR_LAYER); // de chup bong rieng tren be mat da nuong
       o.frustumCulled = false; // luoi co xuong: hop bao tinh theo tu the goc, de bi cat nham
       // tu sang nhe theo mau cua chinh no: nguoc nang mat khong bi toi om
       const m = o.material;

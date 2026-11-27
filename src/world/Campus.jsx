@@ -4,6 +4,7 @@ import { RigidBody, CylinderCollider, CuboidCollider, ConvexHullCollider } from 
 import { useGame } from "../game/store";
 import { zoneInfo, LANDMARKS } from "../data/zones";
 import { MODEL_URL, splitScene } from "./campusModel";
+import CharShadow from "./CharShadow";
 
 // Tim diem xuat phat khong nam trong toa nha nao, gan tam truong nhat
 function findSpawn(boxes) {
@@ -26,7 +27,7 @@ export default function Campus() {
   const setWorld = useGame((s) => s.setWorld);
   const setGameplay = useGame((s) => s.setGameplay);
   const debug = useGame((s) => s.physicsDebug);
-  const { deco, trees, buildings, camBlockers, camGround, walls, zones, items, solids, landmarks } = useMemo(() => splitScene(scene), [scene]);
+  const { deco, trees, buildings, camBlockers, camGround, walls, zones, items, solids, landmarks, hasBaked } = useMemo(() => splitScene(scene), [scene]);
 
   useEffect(() => {
     setGameplay(zones, items);
@@ -41,6 +42,7 @@ export default function Campus() {
 
   return (
     <>
+      {hasBaked && <CharShadow />}
       {/* Mat dat, loi di: va cham theo luoi tam giac (toa nha bi bo qua, xem duoi) */}
       <RigidBody type="fixed" colliders="trimesh">
         <primitive object={scene} />
